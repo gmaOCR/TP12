@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Contrats:</h2>
+<ul>
+{% for contract in contracts %}
+    <li>{{ contract.dateCreated }} - {{ contract.client.first_name }} {{ contract.client.last_name }} - {{ contract.sales_contact.username }}</li>
+{% endfor %}
+</ul>
+<a href="{% url 'create-contract' %}">Créer un nouveau contrat</a>
+{% endblock content %}

@@ -6,7 +6,7 @@ class Client(models.Model):
     client_id = models.AutoField(primary_key=True)
     first_name = models.CharField(max_length=25)
     last_name = models.CharField(max_length=25)
-    email = models.EmailField(max_length=100, unique=True)
+    email = models.EmailField(max_length=100, unique=True, blank=False)
     phone = models.CharField(max_length=20, blank=True, null=True)
     company = models.CharField(max_length=250, blank=True, null=True)
     dateCreated = models.DateField(auto_now_add=True)
@@ -40,12 +40,18 @@ class Contract(models.Model):
 
 
 class Event(models.Model):
+    CHOICES = (
+        ('1', 'Booked'),
+        ('2', 'In progress'),
+        ('3', 'Done')
+    )
     event_id = models.AutoField(primary_key=True)
+    client = models.ForeignKey(to=Contract, on_delete=models.CASCADE, related_name='event_client')
     dateCreated = models.DateField(auto_now_add=True)
     dateUpdated = models.DateField(blank=True, null=True)
     support_contact = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
                                         related_name='support_contracts')
-    eventStatus = models.OneToOneField(to=Contract, on_delete=models.SET_NULL, null=True, related_name='event_contract')
+    eventStatus = models.CharField(max_length=10, blank=False, choices=CHOICES)
     attendes = models.IntegerField(blank=True)
     eventDate = models.DateField(blank=True, null=True)
     note = models.TextField(blank=True, null=True)
@@ -55,3 +61,4 @@ class Event(models.Model):
 
     def __str__(self):
         return f"{self.eventDate} {self.dateCreated} {self.attendes} {self.support_contact} {self.note}"
+

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns="http://www.w3.org/1999/html">
+<head>
+<meta charset=UTF-8>
+<title>CRM tools</title>
+{% load static %}
+<link rel="stylesheet" href="{% static 'app.css' %}">
+</head>
+<body>
+    <div class="sidebar">
+        <h1>CRM</h1>
+        {% if user.is_authenticated %}
+                <a href="{% url 'clients' %}">Nos clients</a>
+                <a href="{% url 'contracts' %}">Nos contrats</a>
+                <a href="{% url 'events' %}">Nos events</a>
+                {% if user.role == 'Gestion' %}
+                <a href="{% url 'staff' %}">Mes équipes </a>
+                {% endif %}
+                <a href="{% url 'logout' %}">Se déconnecter</a></p>
+            <span id="username">Logué en tant que: {{user.username}}</span>
+        {% endif %}
+    </div>
+    <div class="main">
+        {% block content %}{% endblock content %}
+    </div>
+</body>
+</html>
+

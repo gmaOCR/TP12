@@ -44,7 +44,7 @@ class User(AbstractUser):
     )
 
     username = models.CharField(max_length=25, primary_key=True, unique=True)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, error_messages={
+    role = models.CharField(max_length=10, blank=False, choices=ROLE_CHOICES, error_messages={
         'invalid_choice': 'Le rôle choisi est invalide. Les rôles disponibles sont : {}'.format([choice[1] for choice in ROLE_CHOICES])})
 
     objects = UserManager()

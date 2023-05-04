@@ -20,4 +20,4 @@ class ContractAdmin(admin.ModelAdmin):
 class EventAdmin(admin.ModelAdmin):
     list_display = ('event_id', 'eventStatus', 'support_contact', 'eventDate', 'attendes')
     search_fields = ('eventStatus__client__first_name', 'eventStatus__client__last_name', 'support_contact__username')
-    list_filter = ('eventStatus__status', 'support_contact')
+    list_filter = ('eventStatus', 'support_contact')
