@@ -1,9 +1,64 @@
 {% extends 'base.html' %}
 {% block content %}
+<h2>Clients sans contacts de vente:</h2>
+<ul>
+{% with all_clients_have_sales_contact=True %}
+    {% for client in clients %}
+        {% if not client.sales_contact.username %}
+            {% with all_clients_have_sales_contact=False %}
+                {{ client.first_name }} {{ client.last_name }} - {{ client.email }} -
+                {{ client.sales_contact.username }}
+            {% endwith %}
+        {% endif %}
+    {% endfor %}
+
+    {% if all_clients_have_sales_contact %}
+    <p>Tous les contacts sont associés à un vendeur</p>
+    {% endif %}
+{% endwith %}
+</ul>
+
+<h2>Event sans contacts de support:</h2>
+<ul>
+{% with all_events_have_support_contact=True %}
+    {% for event in events %}
+        {% if not event.support_contact.username %}
+            {% with all_events_have_support_contact=False %}
+                {{ event.eventdate }} {{ event.attendes }} - {{ event.status }} -
+                {{ event.support_contact.username }} - {{ event.client.firstname }}
+            {% endwith %}
+        {% endif %}
+    {% endfor %}
+
+    {% if all_events_have_support_contact %}
+    <p>Tous les contacts sont associés à un support évènementiel</p>
+    {% endif %}
+{% endwith %}
+</ul>
+
 <h2>Utilisateurs:</h2>
 <ul>
 {% for user in users %}
     <li>{{ user.username }} - {{ user.email }} - {{ user.get_role_display }}</li>
 {% endfor %}
 </ul>
+
+<h2>Clients:</h2>
+<ul>
+{% for client in clients %}
+    <li>{{ client.first_name }} {{ client.last_name }} - {{ client.email }} -
+    {{ client.sales_contact.username }}</li>
+{% endfor %}
+</ul>
+
+<h2>Events:</h2>
+<ul>
+{% for event in events %}
+    <li>{{ event.eventDate }} -  {{ event.attendes }} - {{ event.eventStatus }} -
+    {{ event.support_contact.username }} - {{ event.client.client.first_name }} - {{ event.client.client.last_name }} </li>
+{% endfor %}
+</ul>
+
 {% endblock content %}
+
+

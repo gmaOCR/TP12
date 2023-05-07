@@ -3,7 +3,8 @@
 <h2>Événements:</h2>
 <ul>
 {% for event in events %}
-    {{ event.eventDate }} - {{ event.support_contact.first_name }} {{ event.support_contact.last_name }} - {{ event.client.first_name }} {{ event.client.last_name }} - {{ event.client.sales_contact.first_name }} {{ event.client.sales_contact.last_name }}
+    {{ event.eventDate }} -  {{ event.attendes }} - {{ event.eventStatus }} -
+    {{ event.support_contact.username }} - {{ event.client.client.first_name }} - {{ event.client.client.last_name }}
 {% endfor %}
 </ul>
 {% endblock content %}

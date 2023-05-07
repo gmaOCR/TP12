@@ -7,3 +7,5 @@
 /.idea/vcs.xml
 /.idea/.gitignore
 /.idea/git_toolbox_prj.xml
+/epicEvents/sales/views.py.bak
+/epicEvents/epicEvents/urls.py.bak
