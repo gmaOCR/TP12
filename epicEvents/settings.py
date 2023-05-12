@@ -51,10 +51,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'sales.middleware.DeleteSlashMiddleware',
-    'epicEvents.middleware.AdminAccessMiddleware',
+    'middleware.AdminAccessMiddleware',
 ]
 
-ROOT_URLCONF = 'epicEvents.urls'
+ROOT_URLCONF = 'urls'
 
 TEMPLATES = [
     {
@@ -74,7 +74,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'epicEvents.wsgi.application'
+WSGI_APPLICATION = 'wsgi.application'
 
 
 # Database
@@ -83,7 +83,7 @@ WSGI_APPLICATION = 'epicEvents.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'epic',
+        'NAME': 'epic2',
         'USER': 'epic',
         'PASSWORD': 'epic',
         'HOST': 'localhost',
