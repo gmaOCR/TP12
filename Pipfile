@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 status = "*"
+pytest = "*"
 
 [dev-packages]
 

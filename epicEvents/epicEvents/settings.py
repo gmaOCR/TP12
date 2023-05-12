@@ -51,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'sales.middleware.DeleteSlashMiddleware',
+    'epicEvents.middleware.AdminAccessMiddleware',
 ]
 
 ROOT_URLCONF = 'epicEvents.urls'
@@ -133,8 +134,8 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = "authentication.User"
-#LOGIN_URL = 'home'
-#LOGOUT_REDIRECT_URL = 'clients'
+# LOGIN_URL = 'admin'
+LOGOUT_REDIRECT_URL = ''
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

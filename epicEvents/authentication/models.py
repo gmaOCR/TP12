@@ -41,6 +41,7 @@ class User(AbstractUser):
     ROLE_CHOICES = (
         ('vente', 'Vente'),
         ('support', 'Support'),
+        ('gestion', 'Gestion'),
     )
 
     username = models.CharField(max_length=25, primary_key=True, unique=True)

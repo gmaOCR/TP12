@@ -20,7 +20,6 @@ from django.urls import path, include
 
 from rest_framework import routers
 
-from authentication.views import CustomAuthToken
 from sales.views import ClientViewSet, ContractViewSet, EventViewSet
 
 router = routers.SimpleRouter()
@@ -31,9 +30,7 @@ router.register(r'clients/(?P<client_id>\d+)/contracts/(?P<contract_id>\d+)/even
 
 urlpatterns = [
     path('api/', include(router.urls), name='api'),
-    # path('api-token-auth/', CustomAuthToken.as_view()),
-    path('admin/', admin.site.urls),
-
+    path('', admin.site.urls, name="login"),
 ]
 
 # if settings.DEBUG:

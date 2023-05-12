@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Client, Contract, Event
+from .views import ClientViewSet, ContractViewSet, EventViewSet
 
 
 @admin.register(Client)
@@ -21,3 +22,5 @@ class EventAdmin(admin.ModelAdmin):
     list_display = ('event_id', 'eventStatus', 'support_contact', 'eventDate', 'attendes')
     search_fields = ('eventStatus__client__first_name', 'eventStatus__client__last_name', 'support_contact__username')
     list_filter = ('eventStatus', 'support_contact')
+
+
