@@ -4,6 +4,8 @@ from .models import Client
 
 
 class IsSaleOrReadOnly(BasePermission):
+    message = "You are not authorized to perform this action (Sale)."
+
     def has_permission(self, request, view):
         # Autoriser les requêtes de lecture à tout le monde
         if request.method in ['GET', 'HEAD', 'OPTIONS']:
@@ -44,7 +46,6 @@ class IsOwner(BasePermission):
         return client.sales_contact == request.user
 
     def has_object_permission(self, request, view, obj):
-        print(obj)
         # Si la requête est une requête en lecture seule (GET, HEAD, OPTIONS), autoriser tout le monde
         if request.method in ['GET', 'HEAD', 'OPTIONS']:
             return True
