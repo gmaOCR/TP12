@@ -8,7 +8,7 @@ class Client(models.Model):
     last_name = models.CharField(max_length=25)
     email = models.EmailField(max_length=100, unique=True, blank=False)
     phone = models.CharField(max_length=20, default=None, blank=True)
-    company = models.CharField(max_length=250, default=None)
+    company = models.CharField(max_length=250, default=None, null=True, blank=True)
     dateCreated = models.DateField(auto_now_add=True, null=True)
     dateUpdated = models.DateField(auto_now=True, null=True)
     sales_contact = models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
