@@ -56,16 +56,15 @@ class ClientViewSet(ModelViewSet):
             client = self.get_object()
             if 'sales_contact' in request.data and not request.user.role != "gestion":
                 raise PermissionDenied("You do not have permission to modify the sales contact")
-            if client.sales_contact == request.user:
-                serializer = ClientSerializer(client, data=request.data, partial=True)
-                if serializer.is_valid(raise_exception=True):
-                    serializer.save(dateUpdated=timezone.now().date().strftime("%Y-%m-%d"))
-                    serializer = self.detail_serializer_class(client)
-                    return Response({'message': 'The client has been updated', 'data': serializer.data},
-                                    status=status.HTTP_200_OK)
-                return Response({"message": "Error occurs with serializer"}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({"message": "Only the sales contact associated with the client can update it"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            if client.sales_contact != request.user:
+                raise PermissionDenied({"message": "Only the sales contact associated with the client can update it"})
+            serializer = ClientSerializer(client, data=request.data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save(dateUpdated=timezone.now().date().strftime("%Y-%m-%d"))
+                serializer = self.detail_serializer_class(client)
+                return Response({'message': 'The client has been updated', 'data': serializer.data},
+                                status=status.HTTP_200_OK)
+            return Response({"message": "Error occurs with serializer"}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -151,30 +150,23 @@ class ContractViewSet(ModelViewSet):
             return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def update(self, request, pk=None, client_id=None):
-        if request.method in ['PUT', 'PATCH']:
-            contract = get_object_or_404(Contract, contract_id=pk)
-            data = {'amount': contract.amount} if hasattr(contract, 'amount') else {}
-            if 'status' not in request.data:
-                request.data['status'] = contract.status
-            if request.data['status'] is False:
-                contract.status = False
-                contract.paymentDue = None
-            elif request.data['status'] and contract.paymentDue is not None:
-                contract.paymentDue = request.data['paymentDue']
-            serializer = self.get_serializer_class()(contract, data={**request.data, **data}, partial=True,
-                                                  context={'paymentDue': request.data.get('paymentDue')})
-            if serializer.is_valid():
-                self.check_object_permissions(request, contract)
-                client = get_object_or_404(Client, client_id=client_id)
-                serializer.save(sales_contact=request.user, client=client)
-                contract.paymentDue = contract.paymentDue or None
-                contract.save()
-                pretty_data = self.detail_serializer_class(contract)
-                return Response({'message': 'Job done.', 'data': pretty_data.data}, status=status.HTTP_200_OK)
-            else:
-                return Response({'message': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        contract = get_object_or_404(Contract, contract_id=pk)
+        contract.amount = request.data.get('amount', contract.amount)
+        contract.status = request.data.get('status', contract.status)
+        contract.paymentDue = request.data.get('paymentDue', contract.paymentDue)
+
+        serializer = ContractUpdateSerializer(contract, data=request.data, partial=True,
+                                              context={'paymentDue': contract.paymentDue})
+        if serializer.is_valid():
+            self.check_object_permissions(request, contract)
+            client = get_object_or_404(Client, client_id=client_id)
+            serializer.save(sales_contact=request.user, client=client)
+            contract.paymentDue = contract.paymentDue or None
+            contract.save()
+            pretty_data = self.detail_serializer_class(contract)
+            return Response({'message': 'Job done.', 'data': pretty_data.data}, status=status.HTTP_200_OK)
         else:
-            return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            return Response({'message': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, client_id=None, *args, **kwargs):
         if request.user.role == 'Gestion':
@@ -194,9 +186,9 @@ class EventViewSet(ModelViewSet):
         if self.action == 'destroy':
             return [IsManager()]
         elif self.action == 'create':
-            return [IsClientSalesContact() and IsManager()]
+            return [IsClientSalesContact() or IsManager()]
         elif self.action in ['update', 'partial_update']:
-            return [IsSupport() and IsClientSalesContact() and IsManager()]
+            return [IsSupport() or IsClientSalesContact() or IsManager()]
         else:
             return []
 
@@ -212,6 +204,7 @@ class EventViewSet(ModelViewSet):
 
     def create(self, request, client_id=None, contract_id=None):
         if request.method == 'POST':
+            print(request.method)
             client = get_object_or_404(Client, client_id=client_id)
             serializer = self.get_serializer_class()(data=request.data, context={'client': client})
             serializer.is_valid(raise_exception=True)
@@ -229,7 +222,6 @@ class EventViewSet(ModelViewSet):
                 return Response({"message": "Only a manager can update the support contact."},
                                 status=status.HTTP_400_BAD_REQUEST)
             serializer = self.CU_serializer_class(event, data=request.data, partial=True)
-            print(serializer)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 serializer = self.detail_serializer_class(event)
