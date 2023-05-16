@@ -99,47 +99,35 @@ class ContractCreateSerializer(serializers.ModelSerializer):
                   'sales_contact']
 
 
-class ContractUpdateSerializer(ContractSerializer):
-    status = serializers.BooleanField()
-    paymentDue = serializers.SerializerMethodField(method_name='get_payment_due')
-    read_only_fields = ['dateCreated', 'dateUpdated']
+class ContractUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Contract
-        fields = ['contract_id', 'client', 'status', 'dateCreated', 'dateUpdated', 'amount', 'paymentDue',
+        fields = ['status', 'dateCreated', 'dateUpdated', 'amount', 'paymentDue',
                   'sales_contact']
 
-    def validate_status(self, status):
-        payment_due = self.initial_data.get('paymentDue')
+    def update(self, instance, validated_data):
+        instance.amount = validated_data.get('amount', instance.amount)
+        status = validated_data.get('status', instance.status)
+        payment_due = validated_data.get('paymentDue', instance.paymentDue)
+
+        if status is False and payment_due is not None:
+            raise serializers.ValidationError("Contract must be signed to have a payment date value")
+        elif status and payment_due is None:
+            raise serializers.ValidationError("A payment date value must be specified for a signed contract.")
+
+        instance.status = status
+        instance.paymentDue = payment_due
+        instance.save()
+        return instance
+
+    def validate_paymentDue(self, payment_due):
+        status = self.initial_data.get('status', self.instance.status)
+
         if status and payment_due is None:
             raise serializers.ValidationError("Payment due must be set if the status is signed.")
-        elif not status and payment_due:
-            raise serializers.ValidationError("Payment due cannot be set without setting the status to signed.")
 
-        return status
-
-    def validate_paymentDue(self, paymentDue):
-        status = self.initial_data.get('status')
-        if status is False and paymentDue is not None:
-            raise serializers.ValidationError("Status must be set to 'signed' if payment due is set.")
-        elif paymentDue is None and status:
-            raise serializers.ValidationError("Payment due must be set if status is 'signed'.")
-
-        return paymentDue
-
-    def validate(self, data):
-        data['status'] = self.validate_status(data.get('status'))
-        data['paymentDue'] = self.validate_paymentDue(self.context.get('paymentDue'))
-        return data
-
-    def get_payment_due(self, obj):
-        payment_due = obj.paymentDue
-        return payment_due if payment_due else ""
-
-    def update(self, instance, validated_data):
-        if 'status' not in validated_data:
-            validated_data['status'] = instance.status
-        return super().update(instance, validated_data)
+        return payment_due
 
 
 class EventSerializer(serializers.ModelSerializer):
