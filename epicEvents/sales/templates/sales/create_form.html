@@ -1,9 +1,0 @@
-{% extends 'base.html' %}
-{% block content %}
-<form method="post">
-    {{ form.as_p }}
-    {% csrf_token %}
-    <button type="submit" >Soumettre</button>
-    <button type="button" name="annuler" onclick="location.href='{% url 'home' %}'">Annuler</button>
-</form>
-{% endblock content %}
