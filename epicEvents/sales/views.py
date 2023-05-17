@@ -5,11 +5,11 @@ from django.utils import timezone
 from django_rest.permissions import IsAuthenticated
 
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from .permissions import IsSaleOrReadOnly, IsOwner, IsManager, IsSupport, IsClientSalesContact
+from .permissions import IsSaleOrReadOnly, IsOwner, IsManager, IsClientSalesContact
 from .models import Client, Contract, Event
 from .serializers import EventSerializer, ClientSerializer, ContractSerializer, \
     ClientListSerializer, ContractListSerializer, ContractCreateSerializer, ContractUpdateSerializer, \
@@ -17,7 +17,7 @@ from .serializers import EventSerializer, ClientSerializer, ContractSerializer, 
 
 
 class ClientViewSet(ModelViewSet):
-    permission_classes = [IsSaleOrReadOnly]
+    permission_classes = [IsSaleOrReadOnly, IsAuthenticated]
 
     serializer_class = ClientListSerializer
     detail_serializer_class = ClientSerializer
@@ -38,8 +38,6 @@ class ClientViewSet(ModelViewSet):
             return self.detail_serializer_class
         elif self.action == 'list':
             return self.serializer_class
-        # elif self.action == 'create':
-        #     return self.serializer_class
         return super(ClientViewSet, self).get_serializer_class()
 
     def create(self, request, *args, **kwargs):
@@ -87,6 +85,8 @@ class ContractViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action == 'destroy':
             permission_classes = [IsManager]
+        elif self.action == 'create':
+            return [IsClientSalesContact() or IsManager()]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
@@ -188,7 +188,7 @@ class EventViewSet(ModelViewSet):
         elif self.action == 'create':
             return [IsClientSalesContact() or IsManager()]
         elif self.action in ['update', 'partial_update']:
-            return [IsSupport() or IsClientSalesContact() or IsManager()]
+            return [IsOwner() or IsClientSalesContact() or IsManager()]
         else:
             return []
 
@@ -204,8 +204,13 @@ class EventViewSet(ModelViewSet):
 
     def create(self, request, client_id=None, contract_id=None):
         if request.method == 'POST':
-            print(request.method)
             client = get_object_or_404(Client, client_id=client_id)
+            try:
+                contract = Contract.objects.get(pk=contract_id, client=client)
+                if not contract.status:
+                    raise ValidationError("The specified contract does not exist or its status is False.")
+            except Contract.DoesNotExist:
+                raise ValidationError("Not found")
             serializer = self.get_serializer_class()(data=request.data, context={'client': client})
             serializer.is_valid(raise_exception=True)
             event = serializer.save(client=client)
@@ -216,11 +221,8 @@ class EventViewSet(ModelViewSet):
             return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def update(self, request, *args, **kwargs):
-        if request.method in ['PUT', 'PATCH']:
+        if request.method == 'PUT' or request.method == 'PATCH':
             event = self.get_object()
-            if 'support_contact' in request.data and not request.user.role != "gestion":
-                return Response({"message": "Only a manager can update the support contact."},
-                                status=status.HTTP_400_BAD_REQUEST)
             serializer = self.CU_serializer_class(event, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
