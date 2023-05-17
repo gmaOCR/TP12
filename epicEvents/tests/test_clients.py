@@ -10,6 +10,66 @@ User = get_user_model()
 
 
 @pytest.mark.django_db
+def test_create_anonyme(api_client, vente_user):
+    api_client.force_authenticate(user=None)
+    url = f'/api/clients/'
+    data = {
+        'email': "client@example.com",
+    }
+    response = api_client.post(url, data)
+    assert response.data['detail'] == 'Authentication credentials were not provided.'
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.django_db
+def test_read_anonyme(api_client, vente_user):
+    client = Client.objects.create(
+        email='client@example.com',
+        phone='1234567890',
+        company='Company',
+        sales_contact=vente_user
+    )
+    api_client.force_authenticate(user=None)
+    url = f'/api/clients/{client.client_id}/'
+    response = api_client.get(url)
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.data['detail'] == 'Authentication credentials were not provided.'
+
+
+@pytest.mark.django_db
+def test_update_anonyme(api_client, vente_user):
+    client = Client.objects.create(
+        email='client@example.com',
+        phone='1234567890',
+        company='Company',
+        sales_contact=vente_user
+    )
+    api_client.force_authenticate(user=None)
+    url = f'/api/clients/{client.client_id}/'
+    data = {
+        'phone': "054504"
+    }
+    response = api_client.put(url, data)
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.data['detail'] == 'Authentication credentials were not provided.'
+
+
+@pytest.mark.django_db
+def test_delete_anonyme(api_client, vente_user):
+    client = Client.objects.create(
+        email='client@example.com',
+        phone='1234567890',
+        company='Company',
+        sales_contact=vente_user
+    )
+    api_client.force_authenticate(user=None)
+    url = f'/api/clients/{client.client_id}/'
+    response = api_client.delete(url)
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.data['detail'] == 'Authentication credentials were not provided.'
+
+
+@pytest.mark.django_db
 def test_create_client(api_client, vente_user):
     api_client.force_authenticate(user=vente_user)
     url = '/api/clients/'

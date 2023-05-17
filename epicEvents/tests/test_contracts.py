@@ -11,7 +11,92 @@ User = get_user_model()
 
 
 @pytest.mark.django_db
-def test_create_contract(api_client, vente_user):
+def test_create_anonyme(api_client, vente_user):
+    client = Client.objects.create(
+        email='client@example.com',
+        phone='1234567890',
+        company='Company',
+        sales_contact=vente_user
+    )
+    api_client.force_authenticate(user=None)
+    url = f'/api/clients/{client.client_id}/contracts/'
+    data = {
+        'amount': 100.0,
+        'status': True,
+        'paymentDue': "2002-02-02"
+    }
+    response = api_client.post(url, data)
+    assert response.data['detail'] == 'Authentication credentials were not provided.'
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.django_db
+def test_read_anonyme(api_client, vente_user):
+    client = Client.objects.create(
+        email='client@example.com',
+        phone='1234567890',
+        company='Company',
+        sales_contact=vente_user
+    )
+    contract = Contract.objects.create(
+        sales_contact=vente_user,
+        client=client,
+        amount=100.0
+    )
+    api_client.force_authenticate(user=None)
+    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    response = api_client.get(url)
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.data['detail'] == 'Authentication credentials were not provided.'
+
+
+@pytest.mark.django_db
+def test_update_anonyme(api_client, vente_user):
+    client = Client.objects.create(
+        email='client@example.com',
+        phone='1234567890',
+        company='Company',
+        sales_contact=vente_user
+    )
+    contract = Contract.objects.create(
+        sales_contact=vente_user,
+        client=client,
+        amount=100.0
+    )
+    api_client.force_authenticate(user=None)
+    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    data = {
+        'amount': 200.0,
+        'status': True,
+        'paymentDue': "2002-02-02"
+    }
+    response = api_client.put(url, data)
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.data['detail'] == 'Authentication credentials were not provided.'
+
+
+@pytest.mark.django_db
+def test_delete_anonyme(api_client, vente_user):
+    client = Client.objects.create(
+        email='client@example.com',
+        phone='1234567890',
+        company='Company',
+        sales_contact=vente_user
+    )
+    contract = Contract.objects.create(
+        client=client,
+        sales_contact=vente_user,
+        amount=100.0,
+    )
+    api_client.force_authenticate(user=None)
+    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    response = api_client.delete(url)
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.data['detail'] == 'Authentication credentials were not provided.'
+
+
+@pytest.mark.django_db
+def test_create_contract_as_vente(api_client, vente_user):
     client = Client.objects.create(
         email='client@example.com',
         phone='1234567890',
@@ -32,7 +117,7 @@ def test_create_contract(api_client, vente_user):
 
 
 @pytest.mark.django_db
-def test_update_contract(api_client, vente_user):
+def test_update_contract_as_vente(api_client, vente_user):
     client = Client.objects.create(
         email='client@example.com',
         phone='1234567890',
@@ -151,7 +236,7 @@ def test_delete_contract_as_vente(api_client, vente_user):
     url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
     response = api_client.delete(url)
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert Client.objects.count() == 1
+    assert Contract.objects.count() == 1
 
 
 @pytest.mark.django_db
