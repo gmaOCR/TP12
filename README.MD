@@ -16,10 +16,11 @@ Utiliser [pip](https://pip.pypa.io/en/stable/) pour installer les dépendances.
 Clonez le projet:
 ```bash
 git clone https://github.com/gmaOCR/TP12.git
+cd TP12
 ```
-Contrôler l'installation de pipenv:
+(Contrôler l'installation de pipenv:)
 ```bash
-pip install --user pipenv
+(pip install --user pipenv)
 ```
 Installer pipenv et les dépendances:
 ```bash
@@ -31,6 +32,7 @@ pipenv shell
 ```
 Lancez le serveur:
 ```bash 
+cd epicEvents
 python manage.py runserver
 ```
 ---
