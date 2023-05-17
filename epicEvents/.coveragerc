@@ -1,0 +1,13 @@
+[run]
+source = .
+omit =
+    */migrations/*
+    manage.py
+    */__init__.py
+    asgi.py
+    wsgi.py
+    urls.py
+    middleware.py
+    authentication/*
+[report]
+fail_under = 80
