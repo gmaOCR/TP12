@@ -9,6 +9,7 @@ pytest = "*"
 datetime = "*"
 django = "*"
 django-rest = "*"
+djangorestframework = "*"
 
 [dev-packages]
 
