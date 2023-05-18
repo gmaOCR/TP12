@@ -7,6 +7,8 @@ name = "pypi"
 status = "*"
 pytest = "*"
 datetime = "*"
+django = "*"
+django-rest = "*"
 
 [dev-packages]
 
