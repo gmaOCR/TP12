@@ -10,6 +10,7 @@ datetime = "*"
 django = "*"
 django-rest = "*"
 djangorestframework = "*"
+psycopg2 = "*"
 
 [dev-packages]
 
