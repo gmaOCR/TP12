@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'sales',
     'authentication',
     'rest_framework',
+    'django_filters'
 ]
 
 MIDDLEWARE = [
@@ -128,7 +129,6 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = "authentication.User"
-# LOGIN_URL = 'admin'
 LOGOUT_REDIRECT_URL = ''
 
 REST_FRAMEWORK = {
@@ -138,4 +138,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend'],
 }
