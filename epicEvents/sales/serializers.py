@@ -6,6 +6,7 @@ from .models import Client, Contract, Event
 
 User = get_user_model()
 
+
 class ClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
@@ -29,24 +30,33 @@ def get_client(obj):
     return f"{obj.client.last_name} {obj.client.first_name}"
 
 
+def get_client_email(obj):
+    return f"{obj.client.email}"
+
+
 def get_status(obj):
     return "Signé" if obj.status else "Non signé"
 
 
 class ContractSerializer(serializers.ModelSerializer):
     client = serializers.SerializerMethodField(method_name='get_client')
+    client_email = serializers.SerializerMethodField(method_name='get_client_email')
     status = serializers.SerializerMethodField(method_name='get_status')
     paymentDue = serializers.SerializerMethodField(method_name='get_payment_due')
 
     class Meta:
         model = Contract
         required_fields = ['amount']
-        fields = ['contract_id', 'client', 'status', 'dateCreated', 'dateUpdated', 'amount', 'paymentDue',
+        fields = ['contract_id', 'client','client_email', 'status', 'dateCreated', 'dateUpdated', 'amount', 'paymentDue',
                   'sales_contact']
 
     @staticmethod
     def get_client(obj):
         return get_client(obj)
+
+    @staticmethod
+    def get_client_email(obj):
+        return get_client_email(obj)
 
     @staticmethod
     def get_status(obj):
@@ -100,7 +110,6 @@ class ContractCreateSerializer(serializers.ModelSerializer):
 
 
 class ContractUpdateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Contract
         fields = ['status', 'dateCreated', 'dateUpdated', 'amount', 'paymentDue',
@@ -131,7 +140,8 @@ class ContractUpdateSerializer(serializers.ModelSerializer):
 
 
 class EventSerializer(serializers.ModelSerializer):
-    client = serializers.StringRelatedField(source='client.client')
+    client = serializers.StringRelatedField(source='client.last_name')
+    mail = serializers.StringRelatedField(source='client.email')
 
     class Meta:
         model = Event
@@ -141,8 +151,9 @@ class EventSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         choices = dict(Event.CHOICES)
         representation['eventStatus'] = choices.get(representation['eventStatus'])
-        if representation['eventDate'] is None:
-            representation['eventDate'] = ""
+        representation['eventDate'] = representation['eventDate'] or ""
+        representation['support_contact'] = representation['support_contact'] or ""
+        representation['note'] = representation['note'] or ""
         return representation
 
 
@@ -163,7 +174,6 @@ class EventListSerializer(serializers.ModelSerializer):
 
 
 class EventCreateUpdateSerializer(serializers.ModelSerializer):
-
     client = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
