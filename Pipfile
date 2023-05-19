@@ -11,6 +11,7 @@ django = "*"
 django-rest = "*"
 djangorestframework = "*"
 psycopg2 = "*"
+freezegun = "*"
 
 [dev-packages]
 
