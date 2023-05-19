@@ -20,19 +20,18 @@ from django.urls import path, include
 
 from rest_framework import routers
 
-from sales.views import ClientViewSet, ContractViewSet, EventViewSet
+from sales.views import ClientViewSet, ContractViewSet, EventViewSet, ContractFilterViewset, EventFilterViewset, ClientFilterViewset
 
 router = routers.SimpleRouter()
 
-router.register(r'clients', ClientViewSet, basename='clients')
-router.register(r'clients/(?P<client_id>\d+)/contracts', ContractViewSet, basename='contracts')
-router.register(r'clients/(?P<client_id>\d+)/contracts/(?P<contract_id>\d+)/events', EventViewSet, basename='events')
+router.register(r'client', ClientViewSet, basename='client')
+router.register(r'client/(?P<client_id>\d+)/contract', ContractViewSet, basename='contract')
+router.register(r'client/(?P<client_id>\d+)/contract/(?P<contract_id>\d+)/event', EventViewSet, basename='event')
+router.register(r'contracts', ContractFilterViewset, basename='contracts')
+router.register(r'events', EventFilterViewset, basename='events')
+router.register(r'clients', ClientFilterViewset, basename='clients')
 
 urlpatterns = [
     path('api/', include(router.urls), name='api'),
     path('', admin.site.urls, name="login"),
 ]
-
-# if settings.DEBUG:
-#    urlpatterns += static(
-#        settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
