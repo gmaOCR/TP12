@@ -96,6 +96,44 @@ def test_delete_anonyme(api_client, vente_user):
 
 
 @pytest.mark.django_db
+def test_get_user(api_client, vente_user):
+    client = Client.objects.create(
+        email='client@example.com',
+        phone='1234567890',
+        company='Company',
+        sales_contact=vente_user
+    )
+    contract = Contract.objects.create(
+        sales_contact=vente_user,
+        client=client,
+        amount=100.0
+    )
+    api_client.force_authenticate(user=vente_user)
+    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    response = api_client.get(url)
+    assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+def test_get_other_user(api_client, vente_user, vente_user_2):
+    client = Client.objects.create(
+        email='client@example.com',
+        phone='1234567890',
+        company='Company',
+        sales_contact=vente_user
+    )
+    contract = Contract.objects.create(
+        sales_contact=vente_user,
+        client=client,
+        amount=100.0
+    )
+    api_client.force_authenticate(user=vente_user_2)
+    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    response = api_client.get(url)
+    assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
 def test_create_contract_as_vente(api_client, vente_user):
     client = Client.objects.create(
         email='client@example.com',
