@@ -1,9 +1,10 @@
 import status as status
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django_rest.permissions import IsAuthenticated
 
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
@@ -11,13 +12,34 @@ from rest_framework.viewsets import ModelViewSet
 
 from .permissions import IsSaleOrReadOnly, IsOwner, IsManager, IsClientSalesContact
 from .models import Client, Contract, Event
+from .filters import ContractFilter, ClientFilter
 from .serializers import EventSerializer, ClientSerializer, ContractSerializer, \
     ClientListSerializer, ContractListSerializer, ContractCreateSerializer, ContractUpdateSerializer, \
     EventListSerializer, EventCreateUpdateSerializer
 
 
+class ClientFilterViewset(ModelViewSet):
+    permission_classes = [IsSaleOrReadOnly]
+    detail_serializer_class = ClientSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ClientFilter
+    queryset = Client.objects.all()
+
+    def check_permissions(self, request):
+        if self.action != 'list':
+            self.permission_denied(
+                request, message='This endpoint does not support this method.'
+            )
+
+    def list(self, request):
+        self.check_permissions(request)
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.detail_serializer_class(queryset, many=True)
+        return Response(serializer.data)
+
+
 class ClientViewSet(ModelViewSet):
-    permission_classes = [IsSaleOrReadOnly, IsAuthenticated]
+    permission_classes = [IsSaleOrReadOnly]
 
     serializer_class = ClientListSerializer
     detail_serializer_class = ClientSerializer
@@ -39,6 +61,18 @@ class ClientViewSet(ModelViewSet):
         elif self.action == 'list':
             return self.serializer_class
         return super(ClientViewSet, self).get_serializer_class()
+
+    def list(self, request, *args, **kwargs):
+        search_param = self.request.query_params.get('search', None)
+        if search_param:
+            queryset = self.filter_queryset(self.get_queryset())
+            queryset = queryset.filter(last_name__icontains=search_param) | queryset.filter(
+                email__icontains=search_param)
+            serializer = self.detail_serializer_class(queryset, many=True)
+            return Response(serializer.data)
+
+        self.serializer_class = self.get_serializer_class()
+        return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         if request.method == 'POST':
@@ -176,7 +210,29 @@ class ContractViewSet(ModelViewSet):
         return Response({'message': 'This endpoint does not support this method.'}, status=status.HTTP_403_FORBIDDEN)
 
 
+class ContractFilterViewset(ModelViewSet):
+    permission_classes = [IsOwner]
+    detail_serializer_class = ContractSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ContractFilter
+    queryset = Contract.objects.all()
+
+    def check_permissions(self, request):
+        if self.action != 'list':
+            self.permission_denied(
+                request, message='This endpoint does not support this method.'
+            )
+
+    def list(self, request):
+        self.check_permissions(request)
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.detail_serializer_class(queryset, many=True)
+        return Response(serializer.data)
+
+
 class EventViewSet(ModelViewSet):
+    permission_classes = [IsOwner]
+
     queryset = Event.objects.all()
     serializer_class = EventListSerializer
     detail_serializer_class = EventSerializer
@@ -190,7 +246,8 @@ class EventViewSet(ModelViewSet):
         elif self.action in ['update', 'partial_update']:
             return [IsOwner() or IsClientSalesContact() or IsManager()]
         else:
-            return []
+            permission_classes = self.permission_classes
+        return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
         print('Action used:', self.action)
@@ -201,6 +258,18 @@ class EventViewSet(ModelViewSet):
         elif self.action in ['create', 'update', 'partial_update']:
             return self.CU_serializer_class
         return super(EventViewSet, self).get_serializer_class()
+
+    def list(self, request, client_id=None, contract_id=None):
+        client = get_object_or_404(Client, client_id=client_id)
+        contract = get_object_or_404(Contract, pk=contract_id, client=client)
+
+        queryset = Event.objects.filter(client=client, contract=contract)
+        if not queryset.exists():
+            return Response({"message": "No events found for this client and contract."},
+                            status=status.HTTP_204_NO_CONTENT)
+
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
 
     def create(self, request, client_id=None, contract_id=None):
         if request.method == 'POST':
@@ -239,3 +308,32 @@ class EventViewSet(ModelViewSet):
             return Response({'message': 'The event has been deleted'}, status=status.HTTP_204_NO_CONTENT)
         return Response({'message': 'You do not have permission to perform this action'},
                         status=status.HTTP_403_FORBIDDEN)
+
+
+class EventFilterViewset(ModelViewSet):
+    permission_classes = [IsOwner]
+    detail_serializer_class = EventSerializer
+
+    def check_permissions(self, request):
+        if self.action != 'list':
+            self.permission_denied(
+                request, message='This endpoint does not support this method.'
+            )
+
+    def list(self, request):
+        self.check_permissions(request)
+        if request.method != 'GET':
+            return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        queryset = Event.objects.all()
+        search_param = self.request.query_params.get('search', None)
+        if search_param:
+            if search_param.strip():
+                queryset = queryset.filter(
+                    Q(client__last_name__icontains=search_param) |
+                    Q(client__email__icontains=search_param) |
+                    Q(eventDate__icontains=search_param)
+                )
+            else:
+                raise ValidationError("Empty search parameter is not allowed.")
+        serializer = self.detail_serializer_class(queryset, many=True)
+        return Response(serializer.data)
