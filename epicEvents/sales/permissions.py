@@ -62,20 +62,6 @@ class IsManager(BasePermission):
         return False
 
 
-class IsClientSalesContact(BasePermission):
-    """
-    Permission to allow only the sales_contact of a client to create an event for that client.
-    """
-
-    def has_permission(self, request, view):
-        client_id = view.kwargs.get('client_id')
-        if client_id is None:
-            return False
-
-        client = get_object_or_404(Client, client_id=client_id)
-        return client.sales_contact == request.user
-
-
 def assign_group_permissions(apps, schema_editor):
     vente_group, _ = Group.objects.get_or_create(name='Vente')
     support_group, _ = Group.objects.get_or_create(name='Support')

@@ -23,7 +23,9 @@ class ContractFilter(django_filters.FilterSet):
 
 
 class EventFilter(django_filters.FilterSet):
+    client_last_name = django_filters.CharFilter(field_name='client__last_name', lookup_expr='icontains')
+    client_email = django_filters.CharFilter(field_name='client__email', lookup_expr='icontains')
 
     class Meta:
         model = Event
-        fields = ['client_last_name', 'client_email', 'dateCreated', 'amount']
+        fields = ['client_last_name', 'client_email', 'eventDate']

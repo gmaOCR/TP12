@@ -3,7 +3,6 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 
 from sales.models import Client, Contract, Event
-from sales.views import ClientViewSet, ContractViewSet, EventViewSet
 
 User = get_user_model()
 
@@ -22,7 +21,7 @@ def test_create_anonyme(api_client, vente_user):
         amount=100.0
     )
     api_client.force_authenticate(user=None)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/events/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/'
     data = {
         'client': contract.client,
         'eventStatus': '1',
@@ -56,7 +55,7 @@ def test_read_anonyme(api_client, vente_user):
         note='Event note'
     )
     api_client.force_authenticate(user=None)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/events/{event.event_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/{event.event_id}/'
     response = api_client.get(url)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.data['detail'] == 'Authentication credentials were not provided.'
@@ -83,7 +82,7 @@ def test_update_anonyme(api_client, vente_user):
         note='Event note'
     )
     api_client.force_authenticate(user=None)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/events/{event.event_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/{event.event_id}/'
     data = {
         'note': "new note",
         'eventStatus': "2",
@@ -115,7 +114,7 @@ def test_delete_anonyme(api_client, vente_user):
         note='Event note'
     )
     api_client.force_authenticate(user=None)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/events/{event.event_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/{event.event_id}/'
     response = api_client.delete(url)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.data['detail'] == 'Authentication credentials were not provided.'
@@ -143,7 +142,7 @@ def test_read_user(api_client, vente_user, support_user):
         support_contact=support_user
     )
     api_client.force_authenticate(user=support_user)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/events/{event.event_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/{event.event_id}/'
     response = api_client.get(url)
     assert response.status_code == status.HTTP_200_OK
     api_client.force_authenticate(user=vente_user)
@@ -166,7 +165,7 @@ def test_create_event(api_client, vente_user):
         status=True
     )
     api_client.force_authenticate(user=vente_user)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/events/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/'
     data = {
         'client': contract.client,
         'eventStatus': '1',
@@ -194,7 +193,7 @@ def test_create_event_contract_status_false(api_client, vente_user):
         status=False
     )
     api_client.force_authenticate(user=vente_user)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/events/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/'
     data = {
         'client': contract.client,
         'eventStatus': '1',
@@ -228,7 +227,7 @@ def test_update_event_by_vente_user_client_creator(api_client, vente_user):
         note='Event note'
     )
     api_client.force_authenticate(user=vente_user)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/events/{event.event_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/{event.event_id}/'
     data = {
         'note': "new note",
         'eventStatus': "2",
@@ -262,7 +261,7 @@ def test_update_event_by_other_vente_user(api_client, vente_user, vente_user_2):
         note='Event note'
     )
     api_client.force_authenticate(user=vente_user_2)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/events/{event.event_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/{event.event_id}/'
     data = {
         'note': "new note",
         'eventStatus': "2",
@@ -296,7 +295,7 @@ def test_update_event_by_support_user(api_client, vente_user, support_user):
         support_contact=support_user
     )
     api_client.force_authenticate(user=support_user)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/events/{event.event_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/{event.event_id}/'
     data = {
         'note': "new note",
         'eventStatus': "2",
@@ -331,7 +330,7 @@ def test_update_event_by_other_support(api_client, vente_user, support_user, sup
         support_contact=support_user
     )
     api_client.force_authenticate(user=support_user_2)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/events/{event.event_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/{event.event_id}/'
     data = {
         'note': "new note",
         'eventStatus': "2",
@@ -364,7 +363,7 @@ def test_delete_as_vente_user(api_client, vente_user):
         note='Event note'
     )
     api_client.force_authenticate(user=vente_user)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/events/{event.event_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/{event.event_id}/'
     response = api_client.delete(url)
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert Event.objects.count() == 1
@@ -391,7 +390,7 @@ def test_delete_as_gestion_user(api_client, vente_user, gestion_user):
         note='Event note'
     )
     api_client.force_authenticate(user=gestion_user)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/events/{event.event_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/{event.event_id}/'
     response = api_client.delete(url)
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert Event.objects.count() == 0

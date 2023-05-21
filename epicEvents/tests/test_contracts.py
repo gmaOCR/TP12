@@ -19,7 +19,7 @@ def test_create_anonyme(api_client, vente_user):
         sales_contact=vente_user
     )
     api_client.force_authenticate(user=None)
-    url = f'/api/clients/{client.client_id}/contracts/'
+    url = f'/api/client/{client.client_id}/contract/'
     data = {
         'amount': 100.0,
         'status': True,
@@ -44,7 +44,7 @@ def test_read_anonyme(api_client, vente_user):
         amount=100.0
     )
     api_client.force_authenticate(user=None)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/'
     response = api_client.get(url)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.data['detail'] == 'Authentication credentials were not provided.'
@@ -64,7 +64,7 @@ def test_update_anonyme(api_client, vente_user):
         amount=100.0
     )
     api_client.force_authenticate(user=None)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/'
     data = {
         'amount': 200.0,
         'status': True,
@@ -89,7 +89,7 @@ def test_delete_anonyme(api_client, vente_user):
         amount=100.0,
     )
     api_client.force_authenticate(user=None)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/'
     response = api_client.delete(url)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.data['detail'] == 'Authentication credentials were not provided.'
@@ -109,7 +109,7 @@ def test_get_user(api_client, vente_user):
         amount=100.0
     )
     api_client.force_authenticate(user=vente_user)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/'
     response = api_client.get(url)
     assert response.status_code == status.HTTP_200_OK
 
@@ -128,7 +128,7 @@ def test_get_other_user(api_client, vente_user, vente_user_2):
         amount=100.0
     )
     api_client.force_authenticate(user=vente_user_2)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/'
     response = api_client.get(url)
     assert response.status_code == status.HTTP_200_OK
 
@@ -142,7 +142,7 @@ def test_create_contract_as_vente(api_client, vente_user):
         sales_contact=vente_user
     )
     api_client.force_authenticate(user=vente_user)
-    url = f'/api/clients/{client.client_id}/contracts/'
+    url = f'/api/client/{client.client_id}/contract/'
     data = {
         'amount': 100.0,
         'status': True,
@@ -168,7 +168,7 @@ def test_update_contract_as_vente(api_client, vente_user):
         amount=100.0
     )
     api_client.force_authenticate(user=vente_user)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/'
     data = {
         'amount': 200.0,
         'status': True,
@@ -196,7 +196,7 @@ def test_update_contract_not_signed(api_client, vente_user):
         amount=100.0
     )
     api_client.force_authenticate(user=vente_user)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/'
     data = {
         'status': False,
         'paymentDue': "2002-02-02"
@@ -224,7 +224,7 @@ def test_update_payement_due_null_status_true(api_client, vente_user):
         status=True
     )
     api_client.force_authenticate(user=vente_user)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/'
     data = {
         'paymentDue': ""
     }
@@ -248,7 +248,7 @@ def test_update_contract_other_user(api_client, vente_user, vente_user_2):
         amount=100.0,
     )
     api_client.force_authenticate(user=vente_user_2)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/'
     data = {
         'amount': 200.0,
     }
@@ -271,7 +271,7 @@ def test_delete_contract_as_vente(api_client, vente_user):
         amount=100.0,
     )
     api_client.force_authenticate(user=vente_user)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/'
     response = api_client.delete(url)
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert Contract.objects.count() == 1
@@ -291,7 +291,7 @@ def test_delete_contract_as_gestion(api_client, gestion_user):
         amount=100.0,
     )
     api_client.force_authenticate(user=gestion_user)
-    url = f'/api/clients/{client.client_id}/contracts/{contract.contract_id}/'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/'
     response = api_client.delete(url)
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert Contract.objects.count() == 0

@@ -12,7 +12,7 @@ User = get_user_model()
 @pytest.mark.django_db
 def test_create_anonyme(api_client, vente_user):
     api_client.force_authenticate(user=None)
-    url = f'/api/clients/'
+    url = f'/api/client/'
     data = {
         'email': "client@example.com",
     }
@@ -30,7 +30,7 @@ def test_read_anonyme(api_client, vente_user):
         sales_contact=vente_user
     )
     api_client.force_authenticate(user=None)
-    url = f'/api/clients/{client.client_id}/'
+    url = f'/api/client/{client.client_id}/'
     response = api_client.get(url)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.data['detail'] == 'Authentication credentials were not provided.'
@@ -45,7 +45,7 @@ def test_update_anonyme(api_client, vente_user):
         sales_contact=vente_user
     )
     api_client.force_authenticate(user=None)
-    url = f'/api/clients/{client.client_id}/'
+    url = f'/api/client/{client.client_id}/'
     data = {
         'phone': "054504"
     }
@@ -63,7 +63,7 @@ def test_delete_anonyme(api_client, vente_user):
         sales_contact=vente_user
     )
     api_client.force_authenticate(user=None)
-    url = f'/api/clients/{client.client_id}/'
+    url = f'/api/client/{client.client_id}/'
     response = api_client.delete(url)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.data['detail'] == 'Authentication credentials were not provided.'
@@ -78,7 +78,7 @@ def test_get(api_client, vente_user):
         sales_contact=vente_user
     )
     api_client.force_authenticate(user=vente_user)
-    url = f'/api/clients/{client.client_id}/'
+    url = f'/api/client/{client.client_id}/'
     response = api_client.get(url)
     assert response.status_code == status.HTTP_200_OK
 
@@ -92,7 +92,7 @@ def test_get_other_user(api_client, vente_user, support_user):
         sales_contact=vente_user
     )
     api_client.force_authenticate(user=support_user)
-    url = f'/api/clients/{client.client_id}/'
+    url = f'/api/client/{client.client_id}/'
     response = api_client.get(url)
     assert response.status_code == status.HTTP_200_OK
 
@@ -100,7 +100,7 @@ def test_get_other_user(api_client, vente_user, support_user):
 @pytest.mark.django_db
 def test_create_client(api_client, vente_user):
     api_client.force_authenticate(user=vente_user)
-    url = '/api/clients/'
+    url = '/api/client/'
     data = {
         'email': 'client@example.com',
         'phone': '1234567890',
@@ -123,7 +123,7 @@ def test_update_client(api_client, vente_user):
         sales_contact=vente_user
     )
     api_client.force_authenticate(user=vente_user)
-    url = f'/api/clients/{client.client_id}/'
+    url = f'/api/client/{client.client_id}/'
     data = {
         'email': 'updated_client@example.com',
         'phone': '9876543210',
@@ -138,24 +138,6 @@ def test_update_client(api_client, vente_user):
 
 
 @pytest.mark.django_db
-def test_create_contract(api_client, vente_user):
-    client = Client.objects.create(
-        email='client@example.com',
-        phone='1234567890',
-        company='Company',
-        sales_contact=vente_user
-    )
-    api_client.force_authenticate(user=vente_user)
-    url = f'/api/clients/{client.client_id}/contracts/'
-    data = {
-        'amount': 100.0,
-    }
-    response = api_client.post(url, data)
-    assert response.status_code == status.HTTP_201_CREATED
-    assert Contract.objects.count() == 1
-
-
-@pytest.mark.django_db
 def test_update_client_other_user(api_client, vente_user, vente_user_2):
     client = Client.objects.create(
         email='client@example.com',
@@ -164,7 +146,7 @@ def test_update_client_other_user(api_client, vente_user, vente_user_2):
         sales_contact=vente_user
     )
     api_client.force_authenticate(user=vente_user_2)
-    url = f'/api/clients/{client.client_id}/'
+    url = f'/api/client/{client.client_id}/'
     data = {
         'email': 'updated_client@example.com',
         'phone': '9876543210',
@@ -186,7 +168,7 @@ def test_delete_client_as_vente(api_client, vente_user):
         sales_contact=vente_user
     )
     api_client.force_authenticate(user=vente_user)
-    url = f'/api/clients/{client.client_id}/'
+    url = f'/api/client/{client.client_id}/'
     response = api_client.delete(url)
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert Client.objects.count() == 1
@@ -201,7 +183,7 @@ def test_delete_client_as_gestion(api_client, vente_user, gestion_user):
         sales_contact=vente_user
     )
     api_client.force_authenticate(user=gestion_user)
-    url = f'/api/clients/{client.client_id}/'
+    url = f'/api/client/{client.client_id}/'
     response = api_client.delete(url)
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert Client.objects.count() == 0

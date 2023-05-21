@@ -10,9 +10,9 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from .permissions import IsSaleOrReadOnly, IsOwner, IsManager, IsClientSalesContact
+from .permissions import IsSaleOrReadOnly, IsOwner, IsManager
 from .models import Client, Contract, Event
-from .filters import ContractFilter, ClientFilter
+from .filters import ContractFilter, ClientFilter, EventFilter
 from .serializers import EventSerializer, ClientSerializer, ContractSerializer, \
     ClientListSerializer, ContractListSerializer, ContractCreateSerializer, ContractUpdateSerializer, \
     EventListSerializer, EventCreateUpdateSerializer
@@ -48,7 +48,7 @@ class ClientViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action == 'destroy':
             permission_classes = [IsManager]
-        elif self.action == 'update':
+        elif self.action in ['update', 'create']:
             permission_classes = [IsManager | IsSaleOrReadOnly]
         else:
             permission_classes = self.permission_classes
@@ -119,8 +119,8 @@ class ContractViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action == 'destroy':
             permission_classes = [IsManager]
-        elif self.action == 'create':
-            return [IsClientSalesContact() or IsManager()]
+        elif self.action in ['create', 'update']:
+            return [IsOwner() or IsManager()]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
@@ -242,9 +242,9 @@ class EventViewSet(ModelViewSet):
         if self.action == 'destroy':
             return [IsManager()]
         elif self.action == 'create':
-            return [IsClientSalesContact() or IsManager()]
+            return [IsOwner() or IsManager()]
         elif self.action in ['update', 'partial_update']:
-            return [IsOwner() or IsClientSalesContact() or IsManager()]
+            return [IsOwner() or IsManager()]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
@@ -313,6 +313,9 @@ class EventViewSet(ModelViewSet):
 class EventFilterViewset(ModelViewSet):
     permission_classes = [IsOwner]
     detail_serializer_class = EventSerializer
+    queryset = Event.objects.all()
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = EventFilter
 
     def check_permissions(self, request):
         if self.action != 'list':
@@ -322,18 +325,6 @@ class EventFilterViewset(ModelViewSet):
 
     def list(self, request):
         self.check_permissions(request)
-        if request.method != 'GET':
-            return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        queryset = Event.objects.all()
-        search_param = self.request.query_params.get('search', None)
-        if search_param:
-            if search_param.strip():
-                queryset = queryset.filter(
-                    Q(client__last_name__icontains=search_param) |
-                    Q(client__email__icontains=search_param) |
-                    Q(eventDate__icontains=search_param)
-                )
-            else:
-                raise ValidationError("Empty search parameter is not allowed.")
+        queryset = self.filter_queryset(self.get_queryset())
         serializer = self.detail_serializer_class(queryset, many=True)
         return Response(serializer.data)
