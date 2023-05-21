@@ -1,6 +1,5 @@
 import status as status
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
