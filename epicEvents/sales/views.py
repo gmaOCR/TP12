@@ -1,6 +1,8 @@
 import status as status
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import get_object_or_404
+from django.http import HttpResponseNotFound
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.utils import timezone
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -17,9 +19,13 @@ from .serializers import EventSerializer, ClientSerializer, ContractSerializer, 
     EventListSerializer, EventCreateUpdateSerializer
 
 
+def not_found_view(request, exception=None):
+    return HttpResponseNotFound('<h1>Page not found</h1>')
+
 class ClientFilterViewset(ModelViewSet):
     permission_classes = [IsSaleOrReadOnly]
     detail_serializer_class = ClientSerializer
+    serializer_class = ClientListSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ClientFilter
     queryset = Client.objects.all()
@@ -33,7 +39,10 @@ class ClientFilterViewset(ModelViewSet):
     def list(self, request):
         self.check_permissions(request)
         queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.detail_serializer_class(queryset, many=True)
+        if any(value for value in request.GET.dict().values() if value):
+            serializer = self.detail_serializer_class(queryset, many=True)
+        else:
+            serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
 
 
@@ -62,16 +71,8 @@ class ClientViewSet(ModelViewSet):
         return super(ClientViewSet, self).get_serializer_class()
 
     def list(self, request, *args, **kwargs):
-        search_param = self.request.query_params.get('search', None)
-        if search_param:
-            queryset = self.filter_queryset(self.get_queryset())
-            queryset = queryset.filter(last_name__icontains=search_param) | queryset.filter(
-                email__icontains=search_param)
-            serializer = self.detail_serializer_class(queryset, many=True)
-            return Response(serializer.data)
-
-        self.serializer_class = self.get_serializer_class()
-        return super().list(request, *args, **kwargs)
+        return Response({"message": "Use '/clients/' instead of '/client/' in your request "},
+                        status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def create(self, request, *args, **kwargs):
         if request.method == 'POST':
@@ -212,6 +213,7 @@ class ContractViewSet(ModelViewSet):
 class ContractFilterViewset(ModelViewSet):
     permission_classes = [IsOwner]
     detail_serializer_class = ContractSerializer
+    serializer_class = ContractListSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ContractFilter
     queryset = Contract.objects.all()
@@ -225,7 +227,10 @@ class ContractFilterViewset(ModelViewSet):
     def list(self, request):
         self.check_permissions(request)
         queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.detail_serializer_class(queryset, many=True)
+        if any(value for value in request.GET.dict().values() if value):
+            serializer = self.detail_serializer_class(queryset, many=True)
+        else:
+            serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
 
 
@@ -312,6 +317,7 @@ class EventViewSet(ModelViewSet):
 class EventFilterViewset(ModelViewSet):
     permission_classes = [IsOwner]
     detail_serializer_class = EventSerializer
+    serializer_class = EventListSerializer
     queryset = Event.objects.all()
     filter_backends = [DjangoFilterBackend]
     filterset_class = EventFilter
@@ -325,5 +331,8 @@ class EventFilterViewset(ModelViewSet):
     def list(self, request):
         self.check_permissions(request)
         queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.detail_serializer_class(queryset, many=True)
+        if any(value for value in request.GET.dict().values() if value):
+            serializer = self.detail_serializer_class(queryset, many=True)
+        else:
+            serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)

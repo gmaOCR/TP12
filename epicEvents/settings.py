@@ -22,9 +22,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-m)lt#)t6@&nc#-uvq58t2j8w1#-sg$452zm+^b)xmn2-=4pvrr'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Application definition
 
@@ -51,6 +51,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'sales.middleware.DeleteSlashMiddleware',
     'middleware.AdminAccessMiddleware',
+    'middleware.NotFoundMiddleware',
 ]
 
 ROOT_URLCONF = 'urls'
@@ -141,3 +142,5 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend'],
 }
+
+

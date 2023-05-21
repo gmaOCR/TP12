@@ -1,4 +1,4 @@
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponseNotFound
 from django.shortcuts import redirect
 
 class AdminAccessMiddleware:
@@ -14,4 +14,15 @@ class AdminAccessMiddleware:
             return HttpResponseForbidden('<h1>403 Forbidden</h1>')
 
         response = self.get_response(request)
+        return response
+
+class NotFoundMiddleware:
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if response.status_code == 404:
+            return HttpResponseNotFound('<h1>Page not found.</h1>')
         return response

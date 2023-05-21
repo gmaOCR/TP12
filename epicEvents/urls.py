@@ -16,11 +16,12 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 
 from rest_framework import routers
 
-from sales.views import ClientViewSet, ContractViewSet, EventViewSet, ContractFilterViewset, EventFilterViewset, ClientFilterViewset
+from sales.views import ClientViewSet, ContractViewSet, EventViewSet, ContractFilterViewset, EventFilterViewset, \
+    ClientFilterViewset, not_found_view
 
 router = routers.SimpleRouter()
 
@@ -33,5 +34,6 @@ router.register(r'clients', ClientFilterViewset, basename='clients')
 
 urlpatterns = [
     path('api/', include(router.urls), name='api'),
+    re_path(r'^(?!sales/|auth/|authentication/|logout|login).*/$', not_found_view),
     path('', admin.site.urls, name="login"),
 ]
