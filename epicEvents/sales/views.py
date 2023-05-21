@@ -1,8 +1,8 @@
 import status as status
+import logging
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponseNotFound
-from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -18,9 +18,12 @@ from .serializers import EventSerializer, ClientSerializer, ContractSerializer, 
     ClientListSerializer, ContractListSerializer, ContractCreateSerializer, ContractUpdateSerializer, \
     EventListSerializer, EventCreateUpdateSerializer
 
+logger = logging.getLogger(__name__)
+
 
 def not_found_view(request, exception=None):
     return HttpResponseNotFound('<h1>Page not found</h1>')
+
 
 class ClientFilterViewset(ModelViewSet):
     permission_classes = [IsSaleOrReadOnly]
@@ -57,7 +60,7 @@ class ClientViewSet(ModelViewSet):
         if self.action == 'destroy':
             permission_classes = [IsManager]
         elif self.action in ['update', 'create']:
-            permission_classes = [IsManager | IsSaleOrReadOnly]
+            permission_classes = [IsSaleOrReadOnly | IsManager]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
@@ -120,7 +123,7 @@ class ContractViewSet(ModelViewSet):
         if self.action == 'destroy':
             permission_classes = [IsManager]
         elif self.action in ['create', 'update']:
-            return [IsOwner() or IsManager()]
+            return [IsOwner() and IsManager()]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
@@ -179,8 +182,10 @@ class ContractViewSet(ModelViewSet):
                 )
 
             serializer = self.detail_serializer_class(contract)
+            logger.info("Contract created with success for test")
             return Response({'message': 'Job done.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         else:
+            logger.debug("create method on Contract serializer got an exception")
             return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def update(self, request, pk=None, client_id=None):
@@ -200,6 +205,7 @@ class ContractViewSet(ModelViewSet):
             pretty_data = self.detail_serializer_class(contract)
             return Response({'message': 'Job done.', 'data': pretty_data.data}, status=status.HTTP_200_OK)
         else:
+            logger.debug("update method on Contract serializer got an exception")
             return Response({'message': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, client_id=None, *args, **kwargs):
@@ -246,9 +252,9 @@ class EventViewSet(ModelViewSet):
         if self.action == 'destroy':
             return [IsManager()]
         elif self.action == 'create':
-            return [IsOwner() or IsManager()]
+            return [IsOwner() and IsManager()]
         elif self.action in ['update', 'partial_update']:
-            return [IsOwner() or IsManager()]
+            return [IsOwner() and IsManager()]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]

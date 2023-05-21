@@ -16,6 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import path, include, re_path
 
 from rest_framework import routers
@@ -37,3 +38,4 @@ urlpatterns = [
     re_path(r'^(?!sales/|auth/|authentication/|logout|login).*/$', not_found_view),
     path('', admin.site.urls, name="login"),
 ]
+urlpatterns += staticfiles_urlpatterns()

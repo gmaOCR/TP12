@@ -7,7 +7,7 @@ User = get_user_model()
 
 @admin.register(User)
 class CustomUserAdmin(DjangoUserAdmin):
-    list_display = ['username', 'email', 'first_name', 'last_name', 'is_staff']
+    list_display = ['username', 'email', 'first_name', 'last_name', 'role', 'is_staff']
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
         ('Personal Info', {'fields': ('first_name', 'last_name')}),

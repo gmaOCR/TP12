@@ -58,7 +58,7 @@ class IsOwner(BasePermission):
 class IsManager(BasePermission):
     def has_permission(self, request, view):
         if request.user.is_authenticated:
-            return request.user.role == 'Gestion'
+            return request.user.role in ['gestion', 'Gestion']
         return False
 
 
