@@ -18,7 +18,7 @@ from .serializers import EventSerializer, ClientSerializer, ContractSerializer, 
     ClientListSerializer, ContractListSerializer, ContractCreateSerializer, ContractUpdateSerializer, \
     EventListSerializer, EventCreateUpdateSerializer
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
 def not_found_view(request, exception=None):
@@ -123,7 +123,7 @@ class ContractViewSet(ModelViewSet):
         if self.action == 'destroy':
             permission_classes = [IsManager]
         elif self.action in ['create', 'update']:
-            return [IsOwner() and IsManager()]
+            permission_classes = [IsOwner | IsManager]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
@@ -182,10 +182,10 @@ class ContractViewSet(ModelViewSet):
                 )
 
             serializer = self.detail_serializer_class(contract)
-            logger.info("Contract created with success for test")
+            # logger.info("Contract created with success for test")
             return Response({'message': 'Job done.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         else:
-            logger.debug("create method on Contract serializer got an exception")
+            # logger.debug("create method on Contract serializer got an exception")
             return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def update(self, request, pk=None, client_id=None):
@@ -205,7 +205,7 @@ class ContractViewSet(ModelViewSet):
             pretty_data = self.detail_serializer_class(contract)
             return Response({'message': 'Job done.', 'data': pretty_data.data}, status=status.HTTP_200_OK)
         else:
-            logger.debug("update method on Contract serializer got an exception")
+            # logger.debug("update method on Contract serializer got an exception")
             return Response({'message': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, client_id=None, *args, **kwargs):
@@ -252,9 +252,9 @@ class EventViewSet(ModelViewSet):
         if self.action == 'destroy':
             return [IsManager()]
         elif self.action == 'create':
-            return [IsOwner() and IsManager()]
+            permission_classes = [IsOwner | IsManager]
         elif self.action in ['update', 'partial_update']:
-            return [IsOwner() and IsManager()]
+            permission_classes = [IsOwner | IsManager]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
@@ -300,6 +300,7 @@ class EventViewSet(ModelViewSet):
             return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def update(self, request, *args, **kwargs):
+
         if request.method == 'PUT' or request.method == 'PATCH':
             event = self.get_object()
             serializer = self.CU_serializer_class(event, data=request.data, partial=True)

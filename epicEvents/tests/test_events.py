@@ -270,7 +270,7 @@ def test_update_event_by_other_vente_user(api_client, vente_user, vente_user_2):
     response = api_client.put(url, data)
     event.refresh_from_db()
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert response.data['detail'] == "You are not authorized to perform this action (Owner)."
+    assert response.data['detail'] == " You do not have permission to perform this action."
 
 
 @pytest.mark.django_db
@@ -339,7 +339,7 @@ def test_update_event_by_other_support(api_client, vente_user, support_user, sup
     response = api_client.put(url, data)
     event.refresh_from_db()
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert response.data['detail'] == "You are not authorized to perform this action (Owner)."
+    assert response.data['detail'] == " You do not have permission to perform this action."
 
 
 @pytest.mark.django_db

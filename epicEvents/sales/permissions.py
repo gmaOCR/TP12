@@ -1,5 +1,4 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import get_object_or_404
 from rest_framework.permissions import BasePermission
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -29,26 +28,22 @@ class IsOwner(BasePermission):
     def has_permission(self, request, view):
         if request.method in ['GET', 'HEAD', 'OPTIONS']:
             return request.user.is_authenticated
-
         client_id = view.kwargs.get('client_id')
         try:
             client = Client.objects.get(client_id=client_id)
         except ObjectDoesNotExist:
             return False
-
         if hasattr(view, 'kwargs') and 'pk' in view.kwargs:
             try:
                 event = Event.objects.get(pk=view.kwargs['pk'])
                 return event.support_contact == request.user or event.client.sales_contact == request.user
             except ObjectDoesNotExist:
                 pass
-
         return client.sales_contact == request.user
 
     def has_object_permission(self, request, view, obj):
         if request.method in ['GET', 'HEAD', 'OPTIONS']:
             return True
-
         if isinstance(obj, Event):
             return obj.support_contact == request.user or obj.client.sales_contact == request.user
 
