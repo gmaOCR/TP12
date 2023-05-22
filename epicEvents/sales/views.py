@@ -61,9 +61,9 @@ class ClientViewSet(ModelViewSet):
         if self.action == 'destroy':
             permission_classes = [IsManager]
         elif self.action in ['create']:
-            permission_classes = [IsSaleOrReadOnly | IsManager]
+            permission_classes = [IsManager | IsSaleOrReadOnly ]
         elif self.action == 'update':
-            permission_classes = [IsOwner | IsManager]
+            permission_classes = [IsManager | IsOwner]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
@@ -121,7 +121,7 @@ class ContractViewSet(ModelViewSet):
         if self.action == 'destroy':
             permission_classes = [IsManager]
         elif self.action in ['create', 'update']:
-            permission_classes = [IsOwner | IsManager]
+            permission_classes = [IsManager | IsOwner]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
@@ -272,6 +272,8 @@ class EventViewSet(ModelViewSet):
         return super(EventViewSet, self).get_serializer_class()
 
     def list(self, request,  *args, **kwargs):
+        client_id = kwargs.get('client_id')
+        contract_id = kwargs.get('contract_id')
         client = get_object_or_404(Client, client_id=client_id)
         contract = get_object_or_404(Contract, pk=contract_id, client=client)
 
@@ -285,6 +287,8 @@ class EventViewSet(ModelViewSet):
 
     def create(self, request,  *args, **kwargs):
         if request.method == 'POST':
+            client_id = kwargs.get('client_id')
+            contract_id = kwargs.get('contract_id')
             client = get_object_or_404(Client, client_id=client_id)
             try:
                 contract = Contract.objects.get(pk=contract_id, client=client)
@@ -304,7 +308,8 @@ class EventViewSet(ModelViewSet):
     def update(self, request,  *args, **kwargs):
 
         if request.method == 'PUT' or request.method == 'PATCH':
-            event = get_object_or_404(Event, contract_id=event_id)
+            event_id = kwargs.get('pk')
+            event = get_object_or_404(Event, event_id=event_id)
             serializer = self.CU_serializer_class(event, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()

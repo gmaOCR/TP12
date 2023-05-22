@@ -225,10 +225,10 @@ def test_update_contract_as_gestion_not_owner(api_client, vente_user, gestion_us
     }
     response = api_client.put(url, data)
     contract.refresh_from_db()
+    assert response.status_code == status.HTTP_200_OK
     assert contract.amount == 200.0
     assert contract.status is True
     assert contract.paymentDue == datetime.strptime("2002-02-02", "%Y-%m-%d").date()
-    assert response.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.django_db

@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.exceptions import PermissionDenied, AuthenticationFailed
 from rest_framework.permissions import BasePermission
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -24,6 +25,7 @@ class IsSaleOrReadOnly(BasePermission):
 
 class IsOwner(BasePermission):
     message = "You are not authorized to perform this action (Owner)."
+    message2 = "Authentication credentials were not provided."
 
     def has_permission(self, request, view):
         if request.user.is_authenticated:
@@ -36,41 +38,37 @@ class IsOwner(BasePermission):
 
             if request.method == 'POST':
                 if client_id and not contract_id:
-                    # Cas de création d'un objet Client
-                    return request.user == Client.objects.get(client_id=client_id).sales_contact
+                    if request.user != Client.objects.get(client_id=client_id).sales_contact:
+                        raise PermissionDenied(detail=self.message)
+                    return True
 
                 if client_id and contract_id:
-                    # Cas de création d'un objet Event
                     contract = Contract.objects.get(pk=contract_id)
-                    return request.user == contract.client.sales_contact
+                    if request.user != contract.client.sales_contact:
+                        raise PermissionDenied(detail=self.message)
+                return True
 
-                # Aucune condition ne correspond à la méthode POST
-                return False
             if request.method == 'PUT':
+                # print(view.kwargs)
                 if pk and not client_id and not contract_id:
                     client = Client.objects.get(pk=pk)
-                    return client.sales_contact == request.user
+                    if client.sales_contact != request.user:
+                        raise PermissionDenied(detail=self.message)
+                    return True
 
                 if pk and client_id and not contract_id:
                     contract = Contract.objects.get(pk=pk)
-                    return contract.client.sales_contact == request.user
+                    if contract.client.sales_contact != request.user:
+                        raise PermissionDenied(detail=self.message)
+                    return True
 
                 if pk and client_id and contract_id:
                     event = Event.objects.get(pk=pk)
-                    return event.support_contact == request.user or event.client.sales_contact == request.user
-        return False
+                    if not (event.support_contact == request.user or event.client.sales_contact == request.user):
+                        raise PermissionDenied(detail=self.message)
+                    return True
 
-    def has_object_permission(self, request, view, obj):
-
-        if request.method in ['GET', 'HEAD', 'OPTIONS']:
-            return True
-        if isinstance(obj, Event):
-            return obj.support_contact == request.user or obj.client.sales_contact == request.user
-        elif isinstance(obj, Client):
-            return obj.sales_contact == request.user
-        elif isinstance(obj, Contract):
-            return obj.client.sales_contact == request.user
-        return False
+        raise AuthenticationFailed(detail=self.message2)
 
 
 class IsManager(BasePermission):
