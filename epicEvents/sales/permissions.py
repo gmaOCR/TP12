@@ -48,29 +48,16 @@ class IsOwner(BasePermission):
                 return False
             if request.method == 'PUT':
                 if pk and not client_id and not contract_id:
-                    # Cas d'un objet Client
-                    try:
-                        client = Client.objects.get(pk=pk)
-                        return client.sales_contact == request.user
-                    except ObjectDoesNotExist:
-                        return False
+                    client = Client.objects.get(pk=pk)
+                    return client.sales_contact == request.user
 
                 if pk and client_id and not contract_id:
-                    # Cas d'un objet Contract
-                    try:
-                        contract = Contract.objects.get(pk=pk)
-                        print(contract.client.sales_contact == request.user)
-                        return contract.client.sales_contact == request.user
-                    except ObjectDoesNotExist:
-                        return False
+                    contract = Contract.objects.get(pk=pk)
+                    return contract.client.sales_contact == request.user
 
                 if pk and client_id and contract_id:
-                    # Cas d'un objet Event
-                    try:
-                        event = Event.objects.get(pk=pk, client_id=client_id, contract_id=contract_id)
-                        return event.support_contact == request.user or event.client.sales_contact == request.user
-                    except ObjectDoesNotExist:
-                        return False
+                    event = Event.objects.get(pk=pk)
+                    return event.support_contact == request.user or event.client.sales_contact == request.user
         return False
 
     def has_object_permission(self, request, view, obj):

@@ -201,7 +201,6 @@ class ContractViewSet(ModelViewSet):
         serializer = ContractUpdateSerializer(contract, data=request.data, partial=True,
                                               context={'paymentDue': contract.paymentDue})
         if serializer.is_valid():
-            self.check_object_permissions(request, contract)
             client_id = kwargs.get('client_id')
             client = get_object_or_404(Client, client_id=client_id)
             serializer.save(sales_contact=request.user, client=client)
