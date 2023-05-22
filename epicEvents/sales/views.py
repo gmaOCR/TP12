@@ -18,7 +18,8 @@ from .serializers import EventSerializer, ClientSerializer, ContractSerializer, 
     ClientListSerializer, ContractListSerializer, ContractCreateSerializer, ContractUpdateSerializer, \
     EventListSerializer, EventCreateUpdateSerializer
 
-# logger = logging.getLogger(__name__)
+
+logger = logging.getLogger(__name__)
 
 
 def not_found_view(request, exception=None):
@@ -59,8 +60,10 @@ class ClientViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action == 'destroy':
             permission_classes = [IsManager]
-        elif self.action in ['update', 'create']:
+        elif self.action in ['create']:
             permission_classes = [IsSaleOrReadOnly | IsManager]
+        elif self.action == 'update':
+            permission_classes = [IsOwner | IsManager]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
@@ -86,13 +89,10 @@ class ClientViewSet(ModelViewSet):
         else:
             return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def update(self, request, *args, **kwargs):
+    def update(self, request,  *args, **kwargs):
         if request.method in ['PUT', 'PATCH']:
-            client = self.get_object()
-            if 'sales_contact' in request.data and not request.user.role != "gestion":
-                raise PermissionDenied("You do not have permission to modify the sales contact")
-            if client.sales_contact != request.user:
-                raise PermissionDenied({"message": "Only the sales contact associated with the client can update it"})
+            client_id = kwargs.get('pk')
+            client = get_object_or_404(Client, client_id=client_id)
             serializer = ClientSerializer(client, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save(dateUpdated=timezone.now().date().strftime("%Y-%m-%d"))
@@ -104,11 +104,9 @@ class ClientViewSet(ModelViewSet):
             return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def destroy(self, request, *args, **kwargs):
-        if request.user.role == 'Gestion':
-            instance = self.get_object()
-            self.perform_destroy(instance)
-            return Response({'message': 'The client has been deleted'}, status=status.HTTP_204_NO_CONTENT)
-        return Response({'message': 'This endpoint does not support this method.'}, status=status.HTTP_403_FORBIDDEN)
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({'message': 'The client has been deleted'}, status=status.HTTP_204_NO_CONTENT)
 
 
 class ContractViewSet(ModelViewSet):
@@ -145,16 +143,18 @@ class ContractViewSet(ModelViewSet):
         client_id = self.kwargs.get('client_id')
         return Contract.objects.filter(client_id=client_id)
 
-    def list(self, request, client_id=None):
+    def list(self, request,  *args, **kwargs):
         queryset = self.get_queryset()
         if not queryset:
             return Response({"message": "No contracts found for this client."}, status=status.HTTP_204_NO_CONTENT)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    def retrieve(self, request, pk=None, client_id=None):
+    def retrieve(self, request,  *args, **kwargs):
+        client_id = kwargs.get('client_id')
+        contract_id = kwargs.get('pk')
         try:
-            queryset = self.get_queryset().filter(client__client_id=client_id, contract_id=pk)
+            queryset = self.get_queryset().filter(client__client_id=client_id, contract_id=contract_id)
             if not queryset:
                 return Response({"message": "Contract not found for this client."}, status=status.HTTP_404_NOT_FOUND)
             serializer = self.get_serializer(queryset.first())
@@ -162,10 +162,13 @@ class ContractViewSet(ModelViewSet):
         except ObjectDoesNotExist:
             return Response({"message": "Client not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    def create(self, request, client_id=None):
+    def create(self, request,  *args, **kwargs):
         if request.method == 'POST':
             serializer = self.get_serializer_class()(data=request.data)
             serializer.is_valid(raise_exception=True)
+
+            client_id = kwargs.get('client_id')
+            print(client_id)
 
             client = Client.objects.get(client_id=client_id)
             contract = serializer.save(sales_contact=request.user, client=client)
@@ -182,14 +185,15 @@ class ContractViewSet(ModelViewSet):
                 )
 
             serializer = self.detail_serializer_class(contract)
-            # logger.info("Contract created with success for test")
+            logger.info("Contract created with success for test")
             return Response({'message': 'Job done.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         else:
-            # logger.debug("create method on Contract serializer got an exception")
+            logger.debug("create method on Contract serializer got an exception")
             return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def update(self, request, pk=None, client_id=None):
-        contract = get_object_or_404(Contract, contract_id=pk)
+    def update(self, request, *args, **kwargs):
+        contract_id = kwargs.get('pk')
+        contract = get_object_or_404(Contract, contract_id=contract_id)
         contract.amount = request.data.get('amount', contract.amount)
         contract.status = request.data.get('status', contract.status)
         contract.paymentDue = request.data.get('paymentDue', contract.paymentDue)
@@ -198,6 +202,7 @@ class ContractViewSet(ModelViewSet):
                                               context={'paymentDue': contract.paymentDue})
         if serializer.is_valid():
             self.check_object_permissions(request, contract)
+            client_id = kwargs.get('client_id')
             client = get_object_or_404(Client, client_id=client_id)
             serializer.save(sales_contact=request.user, client=client)
             contract.paymentDue = contract.paymentDue or None
@@ -205,15 +210,13 @@ class ContractViewSet(ModelViewSet):
             pretty_data = self.detail_serializer_class(contract)
             return Response({'message': 'Job done.', 'data': pretty_data.data}, status=status.HTTP_200_OK)
         else:
-            # logger.debug("update method on Contract serializer got an exception")
+            logger.debug("update method on Contract serializer got an exception")
             return Response({'message': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-    def destroy(self, request, client_id=None, *args, **kwargs):
-        if request.user.role == 'Gestion':
-            instance = self.get_object()
-            self.perform_destroy(instance)
-            return Response({'message': 'The contract has been deleted'}, status=status.HTTP_204_NO_CONTENT)
-        return Response({'message': 'This endpoint does not support this method.'}, status=status.HTTP_403_FORBIDDEN)
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({'message': 'The contract has been deleted'}, status=status.HTTP_204_NO_CONTENT)
 
 
 class ContractFilterViewset(ModelViewSet):
@@ -252,9 +255,9 @@ class EventViewSet(ModelViewSet):
         if self.action == 'destroy':
             return [IsManager()]
         elif self.action == 'create':
-            permission_classes = [IsOwner | IsManager]
+            return [IsOwner() or IsManager()]
         elif self.action in ['update', 'partial_update']:
-            permission_classes = [IsOwner | IsManager]
+            return [IsOwner() or IsManager()]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
@@ -269,7 +272,7 @@ class EventViewSet(ModelViewSet):
             return self.CU_serializer_class
         return super(EventViewSet, self).get_serializer_class()
 
-    def list(self, request, client_id=None, contract_id=None):
+    def list(self, request,  *args, **kwargs):
         client = get_object_or_404(Client, client_id=client_id)
         contract = get_object_or_404(Contract, pk=contract_id, client=client)
 
@@ -281,7 +284,7 @@ class EventViewSet(ModelViewSet):
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
 
-    def create(self, request, client_id=None, contract_id=None):
+    def create(self, request,  *args, **kwargs):
         if request.method == 'POST':
             client = get_object_or_404(Client, client_id=client_id)
             try:
@@ -299,10 +302,10 @@ class EventViewSet(ModelViewSet):
         else:
             return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def update(self, request, *args, **kwargs):
+    def update(self, request,  *args, **kwargs):
 
         if request.method == 'PUT' or request.method == 'PATCH':
-            event = self.get_object()
+            event = get_object_or_404(Event, contract_id=event_id)
             serializer = self.CU_serializer_class(event, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
@@ -313,12 +316,10 @@ class EventViewSet(ModelViewSet):
             return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def destroy(self, request, *args, **kwargs):
-        if request.user.role == 'Gestion':
-            instance = self.get_object()
-            self.perform_destroy(instance)
-            return Response({'message': 'The event has been deleted'}, status=status.HTTP_204_NO_CONTENT)
-        return Response({'message': 'You do not have permission to perform this action'},
-                        status=status.HTTP_403_FORBIDDEN)
+
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({'message': 'The event has been deleted'}, status=status.HTTP_204_NO_CONTENT)
 
 
 class EventFilterViewset(ModelViewSet):

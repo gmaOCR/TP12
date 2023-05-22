@@ -58,7 +58,7 @@ def gestion_user(db):
     User = get_user_model()
     username = 'gestion_user'
     password = 'password'
-    role = 'Gestion'
+    role = 'gestion'
     user = User.objects.create_user(username=username, role=role, password=password)
     yield user
     user.delete()

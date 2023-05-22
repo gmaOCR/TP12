@@ -15,7 +15,7 @@ class IsSaleOrReadOnly(BasePermission):
             return request.user.is_authenticated
 
         # Vérifier si l'utilisateur est authentifié et a le rôle 'vente'
-        if request.user.is_authenticated and request.user.role == 'vente':
+        if request.user.is_authenticated and request.user.role in ['vente', 'Vente']:
             return True
 
         # Les utilisateurs non authentifiés ou les utilisateurs authentifiés sans le rôle 'vente' ne sont pas autorisés
@@ -26,31 +26,69 @@ class IsOwner(BasePermission):
     message = "You are not authorized to perform this action (Owner)."
 
     def has_permission(self, request, view):
-        if request.method in ['GET', 'HEAD', 'OPTIONS']:
-            return request.user.is_authenticated
-        client_id = view.kwargs.get('client_id')
-        try:
-            client = Client.objects.get(client_id=client_id)
-        except ObjectDoesNotExist:
-            return False
-        if hasattr(view, 'kwargs') and 'pk' in view.kwargs:
-            try:
-                event = Event.objects.get(pk=view.kwargs['pk'])
-                return event.support_contact == request.user or event.client.sales_contact == request.user
-            except ObjectDoesNotExist:
-                pass
-        return client.sales_contact == request.user
+        if request.user.is_authenticated:
+            if request.method in ['GET', 'HEAD', 'OPTIONS']:
+                return True
+
+            pk = view.kwargs.get('pk')
+            client_id = view.kwargs.get('client_id')
+            contract_id = view.kwargs.get('contract_id')
+
+            if request.method == 'POST':
+                if client_id and not contract_id:
+                    # Cas de création d'un objet Client
+                    return request.user == Client.objects.get(client_id=client_id).sales_contact
+
+                if client_id and contract_id:
+                    # Cas de création d'un objet Event
+                    contract = Contract.objects.get(pk=contract_id)
+                    return request.user == contract.client.sales_contact
+
+                # Aucune condition ne correspond à la méthode POST
+                return False
+            if request.method == 'PUT':
+                if pk and not client_id and not contract_id:
+                    # Cas d'un objet Client
+                    try:
+                        client = Client.objects.get(pk=pk)
+                        return client.sales_contact == request.user
+                    except ObjectDoesNotExist:
+                        return False
+
+                if pk and client_id and not contract_id:
+                    # Cas d'un objet Contract
+                    try:
+                        contract = Contract.objects.get(pk=pk)
+                        print(contract.client.sales_contact == request.user)
+                        return contract.client.sales_contact == request.user
+                    except ObjectDoesNotExist:
+                        return False
+
+                if pk and client_id and contract_id:
+                    # Cas d'un objet Event
+                    try:
+                        event = Event.objects.get(pk=pk, client_id=client_id, contract_id=contract_id)
+                        return event.support_contact == request.user or event.client.sales_contact == request.user
+                    except ObjectDoesNotExist:
+                        return False
+        return False
 
     def has_object_permission(self, request, view, obj):
+
         if request.method in ['GET', 'HEAD', 'OPTIONS']:
             return True
         if isinstance(obj, Event):
             return obj.support_contact == request.user or obj.client.sales_contact == request.user
-
-        return obj.sales_contact == request.user and obj.client.sales_contact == request.user
+        elif isinstance(obj, Client):
+            return obj.sales_contact == request.user
+        elif isinstance(obj, Contract):
+            return obj.client.sales_contact == request.user
+        return False
 
 
 class IsManager(BasePermission):
+    message = "You are not authorized to perform this action (Manager)."
+
     def has_permission(self, request, view):
         if request.user.is_authenticated:
             return request.user.role in ['gestion', 'Gestion']

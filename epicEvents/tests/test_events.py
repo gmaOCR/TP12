@@ -270,7 +270,7 @@ def test_update_event_by_other_vente_user(api_client, vente_user, vente_user_2):
     response = api_client.put(url, data)
     event.refresh_from_db()
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert response.data['detail'] == " You do not have permission to perform this action."
+    assert response.data['detail'] == "You are not authorized to perform this action (Owner)."
 
 
 @pytest.mark.django_db
@@ -339,7 +339,7 @@ def test_update_event_by_other_support(api_client, vente_user, support_user, sup
     response = api_client.put(url, data)
     event.refresh_from_db()
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert response.data['detail'] == " You do not have permission to perform this action."
+    assert response.data['detail'] == "You are not authorized to perform this action (Owner)."
 
 
 @pytest.mark.django_db
@@ -366,6 +366,7 @@ def test_delete_as_vente_user(api_client, vente_user):
     url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/{event.event_id}/'
     response = api_client.delete(url)
     assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.data['detail'] == "You are not authorized to perform this action (Manager)."
     assert Event.objects.count() == 1
 
 
@@ -392,5 +393,6 @@ def test_delete_as_gestion_user(api_client, vente_user, gestion_user):
     api_client.force_authenticate(user=gestion_user)
     url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/{event.event_id}/'
     response = api_client.delete(url)
+    assert response.data['message'] == "The event has been deleted"
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert Event.objects.count() == 0

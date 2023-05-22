@@ -96,7 +96,7 @@ def test_delete_anonyme(api_client, vente_user):
 
 
 @pytest.mark.django_db
-def test_get_user(api_client, vente_user):
+def test_get_user_vente(api_client, vente_user):
     client = Client.objects.create(
         email='client@example.com',
         phone='1234567890',
@@ -225,9 +225,9 @@ def test_update_contract_as_gestion_not_owner(api_client, vente_user, gestion_us
     }
     response = api_client.put(url, data)
     contract.refresh_from_db()
+    assert contract.amount == 200.0
     assert contract.status is True
     assert contract.paymentDue == datetime.strptime("2002-02-02", "%Y-%m-%d").date()
-    assert contract.amount == 200.0
     assert response.status_code == status.HTTP_200_OK
 
 
@@ -303,7 +303,7 @@ def test_update_contract_other_user(api_client, vente_user, vente_user_2):
     }
     response = api_client.put(url, data)
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert response.data['detail'] == "You do not have permission to perform this action."
+    assert response.data['detail'] == "You are not authorized to perform this action (Owner)."
 
 
 @pytest.mark.django_db
