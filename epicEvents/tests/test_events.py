@@ -148,6 +148,13 @@ def test_read_user(api_client, vente_user, support_user):
     api_client.force_authenticate(user=vente_user)
     response = api_client.get(url)
     assert response.status_code == status.HTTP_200_OK
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/22/'
+    response = api_client.get(url)
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.data['message'] == 'Event not found for this client and contract.'
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/event/'
+    response = api_client.get(url)
+    assert response.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.django_db

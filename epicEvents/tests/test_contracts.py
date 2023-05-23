@@ -96,7 +96,7 @@ def test_delete_anonyme(api_client, vente_user):
 
 
 @pytest.mark.django_db
-def test_get_user_vente(api_client, vente_user):
+def test_get_user_vente_retrieve(api_client, vente_user):
     client = Client.objects.create(
         email='client@example.com',
         phone='1234567890',
@@ -112,6 +112,31 @@ def test_get_user_vente(api_client, vente_user):
     url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/'
     response = api_client.get(url)
     assert response.status_code == status.HTTP_200_OK
+    url = f'/api/client/{client.client_id}/contract/2/'
+    response = api_client.get(url)
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.data['message'] == 'Contract not found for this client.'
+
+@pytest.mark.django_db
+def test_get_user_vente_list(api_client, vente_user):
+    client = Client.objects.create(
+        email='client@example.com',
+        phone='1234567890',
+        company='Company',
+        sales_contact=vente_user
+    )
+    Contract.objects.create(
+        sales_contact=vente_user,
+        client=client,
+        amount=100.0
+    )
+    api_client.force_authenticate(user=vente_user)
+    url = f'/api/client/{client.client_id}/contract/'
+    response = api_client.get(url)
+    assert response.status_code == status.HTTP_200_OK
+    url = f'/api/client/22/contract/'
+    response = api_client.get(url)
+    assert response.data['message'] == 'No contracts found for this client.'
 
 
 @pytest.mark.django_db

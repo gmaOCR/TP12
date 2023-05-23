@@ -28,6 +28,7 @@ def not_found_view(request, exception=None):
 
 class ClientFilterViewset(ModelViewSet):
     permission_classes = [IsSaleOrReadOnly]
+
     detail_serializer_class = ClientSerializer
     serializer_class = ClientListSerializer
     filter_backends = [DjangoFilterBackend]
@@ -72,12 +73,10 @@ class ClientViewSet(ModelViewSet):
         print('Action used:', self.action)
         if self.action == 'retrieve':
             return self.detail_serializer_class
-        elif self.action == 'list':
-            return self.serializer_class
         return super(ClientViewSet, self).get_serializer_class()
 
     def list(self, request, *args, **kwargs):
-        return Response({"message": "Use '/clients/' instead of '/client/' in your request "},
+        return Response({"message": "Use '/clients/' instead of '/client/' in your request"},
                         status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def create(self, request, *args, **kwargs):
@@ -160,7 +159,7 @@ class ContractViewSet(ModelViewSet):
             serializer = self.get_serializer(queryset.first())
             return Response(serializer.data)
         except ObjectDoesNotExist:
-            return Response({"message": "Client not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Contract not found."}, status=status.HTTP_404_NOT_FOUND)
 
     def create(self, request,  *args, **kwargs):
         if request.method == 'POST':
@@ -198,7 +197,7 @@ class ContractViewSet(ModelViewSet):
         contract.status = request.data.get('status', contract.status)
         contract.paymentDue = request.data.get('paymentDue', contract.paymentDue)
 
-        serializer = ContractUpdateSerializer(contract, data=request.data, partial=True,
+        serializer = self.get_serializer_class()(contract, data=request.data, partial=True,
                                               context={'paymentDue': contract.paymentDue})
         if serializer.is_valid():
             client_id = kwargs.get('client_id')
@@ -274,16 +273,34 @@ class EventViewSet(ModelViewSet):
     def list(self, request,  *args, **kwargs):
         client_id = kwargs.get('client_id')
         contract_id = kwargs.get('contract_id')
-        client = get_object_or_404(Client, client_id=client_id)
-        contract = get_object_or_404(Contract, pk=contract_id, client=client)
-
-        queryset = Event.objects.filter(client=client, contract=contract)
+        queryset = Event.objects.filter(client__client_id=client_id, client__contract_client__contract_id=contract_id)
         if not queryset.exists():
             return Response({"message": "No events found for this client and contract."},
                             status=status.HTTP_204_NO_CONTENT)
-
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        client_id = kwargs.get('client_id')
+        contract_id = kwargs.get('contract_id')
+        event_id = kwargs.get('pk')
+
+        try:
+            queryset = self.get_queryset().filter(
+                client__client_id=client_id,
+                client__contract_client__contract_id=contract_id,
+                event_id=event_id,
+            )
+
+            if not queryset:
+                return Response({"message": "Event not found for this client and contract."},
+                                status=status.HTTP_404_NOT_FOUND)
+
+            serializer = self.get_serializer(queryset.first())
+            return Response(serializer.data)
+
+        except ObjectDoesNotExist:
+            return Response({"message": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
 
     def create(self, request,  *args, **kwargs):
         if request.method == 'POST':

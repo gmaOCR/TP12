@@ -69,7 +69,7 @@ def test_delete_anonyme(api_client, vente_user):
 
 
 @pytest.mark.django_db
-def test_get(api_client, vente_user):
+def test_get_retrieve(api_client, vente_user):
     client = Client.objects.create(
         email='client@example.com',
         phone='1234567890',
@@ -80,6 +80,21 @@ def test_get(api_client, vente_user):
     url = f'/api/client/{client.client_id}/'
     response = api_client.get(url)
     assert response.status_code == status.HTTP_200_OK
+
+@pytest.mark.django_db
+def test_get_list(api_client, vente_user):
+    Client.objects.create(
+        email='client@example.com',
+        phone='1234567890',
+        company='Company',
+        sales_contact=vente_user
+    )
+    api_client.force_authenticate(user=vente_user)
+    url = f'/api/client/'
+    response = api_client.get(url)
+    assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+    assert response.data['message'] == "Use '/clients/' instead of '/client/' in your request"
+
 
 
 @pytest.mark.django_db
