@@ -35,7 +35,7 @@ router.register(r'clients', ClientFilterViewset, basename='clients')
 
 urlpatterns = [
     path('api/', include(router.urls), name='api'),
-    re_path(r'^(?!sales/|auth/|authentication/|logout/|login/|static/).*/$', not_found_view),
+    re_path(r'^(?!sales/|auth/|authentication/|logout/|login/|static/|/jsi18n/).*/$', not_found_view),
     path('', admin.site.urls, name="login"),
 ]
 urlpatterns += staticfiles_urlpatterns()

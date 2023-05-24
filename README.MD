@@ -38,7 +38,7 @@ python manage.py runserver
 ---
 ## Documentation de l'API
 
-La documentation des requêtes et de l'API sont disponibles [ici](https://documenter.getpostman.com/view/24264370/2s93XsY6FX)
+La documentation des requêtes et de l'API sont disponibles [ici](https://documenter.getpostman.com/view/24264370/2s93m4X2dB)
 
 ---
 ## License

@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 import logging
-from django.contrib.staticfiles.handlers import StaticFilesHandler
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -42,7 +41,8 @@ INSTALLED_APPS = [
     'sales',
     'authentication',
     'rest_framework',
-    'django_filters'
+    'django_filters',
+    #'authentication.apps.AuthenticationConfig'
 ]
 
 MIDDLEWARE = [
