@@ -7,7 +7,7 @@ L'applicatif est basé sur 3 groupes d'utilisateurs: *vente*, *support* et *gest
 - *gestion* est le groupe des super-user
 - *vente* et *support* sont les groupes d'utilisateurs principaux du produit
 
-En fonction des droits prédéfinis pour chacun de ces groupes, les utilisateurs agiront sur des *Clients*, *Contracts* et *Events*.
+En fonction des droits prédéfinis pour chacun de ces groupes, les utilisateurs agiront sur des *Clients*, *Contracts* et/ou *Events*.
 
 ## Installation
 
@@ -39,6 +39,7 @@ python manage.py runserver
 ## Documentation de l'API
 
 La documentation des requêtes et de l'API sont disponibles [ici](https://documenter.getpostman.com/view/24264370/2s93m4X2dB)
+Les endpoints des recherches sont détaillés sur cette documentation
 
 ---
 ## License
