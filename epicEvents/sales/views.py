@@ -61,7 +61,7 @@ class ClientViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action == 'destroy':
             permission_classes = [IsManager]
-        elif self.action in ['create']:
+        elif self.action == 'create':
             permission_classes = [IsManager | IsSaleOrReadOnly ]
         elif self.action == 'update':
             permission_classes = [IsManager | IsOwner]
