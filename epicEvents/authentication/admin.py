@@ -50,22 +50,6 @@ class UserAdmin(DjangoUserAdmin):
             instance.role = 'gestion'
             instance.save()
 
+
 admin.site.register(User, UserAdmin)
 admin.site.unregister(Group)
-
-
-# admin.site.unregister(Group)  # Désenregistre le modèle de groupe par défaut
-
-# @receiver(m2m_changed, sender=User.groups.through)
-# def assign_role_from_group(sender, instance, action, model, pk_set, **kwargs):
-#     if action == 'post_add' and model == Group:
-#         if instance.groups.exists():
-#             group = instance.groups.first()
-#             if group.name == 'vente':
-#                 instance.role = 'vente'
-#             elif group.name == 'support':
-#                 instance.role = 'support'
-#         elif action == 'post_remove' and model == Group:
-#             if not instance.is_superuser:
-#                 instance.role = 'vente'
-#         instance.save()

@@ -117,6 +117,7 @@ def test_get_user_vente_retrieve(api_client, vente_user):
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.data['message'] == 'Contract not found for this client.'
 
+
 @pytest.mark.django_db
 def test_get_user_vente_list(api_client, vente_user):
     client = Client.objects.create(
@@ -228,7 +229,8 @@ def test_update_contract_as_vente(api_client, vente_user):
     assert response.status_code == status.HTTP_200_OK
 
 
-def test_update_contract_as_gestion_not_owner(api_client, vente_user, gestion_user):
+@pytest.mark.django_db
+def test_update_contract_as_gestion_not_owner(api_client, vente_user, gestion_user, vente_user_2):
     client = Client.objects.create(
         email='client@example.com',
         phone='1234567890',
@@ -246,7 +248,7 @@ def test_update_contract_as_gestion_not_owner(api_client, vente_user, gestion_us
     data = {
         'amount': 200.0,
         'status': True,
-        'paymentDue': "2002-02-02"
+        'paymentDue': "2002-02-02",
     }
     response = api_client.put(url, data)
     contract.refresh_from_db()
@@ -254,6 +256,32 @@ def test_update_contract_as_gestion_not_owner(api_client, vente_user, gestion_us
     assert contract.amount == 200.0
     assert contract.status is True
     assert contract.paymentDue == datetime.strptime("2002-02-02", "%Y-%m-%d").date()
+
+
+@pytest.mark.django_db
+def test_update_contract_change_sales_contact(api_client, vente_user, gestion_user, vente_user_2):
+    client = Client.objects.create(
+        email='client@example.com',
+        phone='1234567890',
+        company='Company',
+        sales_contact=vente_user
+    )
+    contract = Contract.objects.create(
+        sales_contact=vente_user,
+        client=client,
+        amount=100.0,
+        status=False
+    )
+    api_client.force_authenticate(user=gestion_user)
+    url = f'/api/client/{client.client_id}/contract/{contract.contract_id}/'
+    data = {
+        'sales_contact': "vente_user_2"
+    }
+    response = api_client.put(url, data)
+    contract.refresh_from_db()
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.data['error'] == "The sales contact specified in the contract cannot differ " \
+                                     "from the client's sales contact."
 
 
 @pytest.mark.django_db
@@ -305,7 +333,8 @@ def test_update_payement_due_null_status_true(api_client, vente_user):
     response = api_client.put(url, data)
     contract.refresh_from_db()
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.data == {'message': {'paymentDue': ['Payment due must be set if the status is signed.']}}
+    assert response.data == {
+        'message': {'paymentDue': ['Payment due must be set if the status is signed.']}}
 
 
 @pytest.mark.django_db

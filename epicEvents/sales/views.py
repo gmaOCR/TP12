@@ -88,14 +88,16 @@ class ClientViewSet(ModelViewSet):
         else:
             return Response({"message": "Invalid method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def update(self, request,  *args, **kwargs):
+    def update(self, request, *args, **kwargs):
         if request.method in ['PUT', 'PATCH']:
             client_id = kwargs.get('pk')
             client = get_object_or_404(Client, client_id=client_id)
             serializer = ClientSerializer(client, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
-                serializer.save(dateUpdated=timezone.now().date().strftime("%Y-%m-%d"))
-                serializer = self.detail_serializer_class(client)
+                if 'sales_contact' in request.data:
+                    contracts = Contract.objects.filter(client_id=client_id)
+                    contracts.update(sales_contact=request.data['sales_contact'])
+                serializer.save(dateUpdated=timezone.now().date())
                 return Response({'message': 'The client has been updated', 'data': serializer.data},
                                 status=status.HTTP_200_OK)
             return Response({"message": "Error occurs with serializer"}, status=status.HTTP_400_BAD_REQUEST)
@@ -167,7 +169,6 @@ class ContractViewSet(ModelViewSet):
             serializer.is_valid(raise_exception=True)
 
             client_id = kwargs.get('client_id')
-            print(client_id)
 
             client = Client.objects.get(client_id=client_id)
             contract = serializer.save(sales_contact=request.user, client=client)
@@ -199,6 +200,11 @@ class ContractViewSet(ModelViewSet):
 
         serializer = self.get_serializer_class()(contract, data=request.data, partial=True,
                                               context={'paymentDue': contract.paymentDue})
+        sales_contact = request.data.get('sales_contact')
+        if sales_contact is not None and sales_contact != contract.sales_contact:
+            return Response({'error': "The sales contact specified in the contract cannot differ "
+                                      "from the client's sales contact."},
+                            status=status.HTTP_403_FORBIDDEN)
         if serializer.is_valid():
             client_id = kwargs.get('client_id')
             client = get_object_or_404(Client, client_id=client_id)
@@ -253,9 +259,9 @@ class EventViewSet(ModelViewSet):
         if self.action == 'destroy':
             return [IsManager()]
         elif self.action == 'create':
-            return [IsOwner() or IsManager()]
+            permission_classes = [IsManager | IsOwner]
         elif self.action in ['update', 'partial_update']:
-            return [IsOwner() or IsManager()]
+            permission_classes = [IsManager | IsOwner]
         else:
             permission_classes = self.permission_classes
         return [permission() for permission in permission_classes]
@@ -315,6 +321,12 @@ class EventViewSet(ModelViewSet):
                 raise ValidationError("Not found")
             serializer = self.get_serializer_class()(data=request.data, context={'client': client})
             serializer.is_valid(raise_exception=True)
+
+            # Check if the user has the IsManager permission for the support_contact field
+            if 'support_contact' in serializer.validated_data and not request.user.has_perm(
+                    'IsManager'):
+                raise PermissionDenied("You do not have permission to set the support contact.")
+
             event = serializer.save(client=client)
             pretty_data = self.detail_serializer_class(event)
             return Response({'message': 'Event created successfully.', 'data': pretty_data.data},
@@ -327,6 +339,11 @@ class EventViewSet(ModelViewSet):
         if request.method == 'PUT' or request.method == 'PATCH':
             event_id = kwargs.get('pk')
             event = get_object_or_404(Event, event_id=event_id)
+
+            # Check if the user has the IsManager permission for the support_contact field
+            if not request.user.has_perm('IsManager') and 'support_contact' in request.data:
+                raise PermissionDenied("You do not have permission to update the support contact.")
+
             serializer = self.CU_serializer_class(event, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
